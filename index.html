@@ -47,7 +47,7 @@ body.dark{--bg:#151722;--panel:#202331;--ink:#edf0fa;--muted:#a6acc0;--line:#383
   <section id="week" class="section"><div class="panel"><div class="panel-head"><h2>Vue de la semaine</h2><button class="secondary" id="weekGenerate">Générer cette semaine</button></div><div class="notice">La vue semaine affiche les tâches planifiées. Les cours fixes et la synchronisation de calendrier pourront être ajoutés ensuite.</div><div id="weekGrid" class="weekgrid"></div></div></section>
   <section id="tasks" class="section"><div class="panel"><div class="panel-head"><h2>Toutes mes tâches</h2><button id="addTask" >＋ Nouvelle tâche</button></div><div class="form-grid" style="margin-bottom:14px"><div><label class="field" for="taskFilter">Filtrer par matière</label><select id="taskFilter"><option value="">Toutes les matières</option></select></div><div><label class="field" for="statusFilter">État</label><select id="statusFilter"><option value="open">À faire</option><option value="all">Toutes</option><option value="done">Terminées</option></select></div></div><div id="allTasks" class="list"></div></div></section>
   <section id="subjects" class="section"><div class="panel"><div class="panel-head"><h2>Mes matières</h2><button id="addSubject">＋ Ajouter une matière</button></div><p class="muted small">Les matières servent à classer tes tâches et à répartir les séances de révision.</p><div id="subjectList" class="subject-list"></div></div></section>
-  <div class="footer">Tempo · Version de départ · Tes données restent dans le stockage local de ton navigateur.</div>
+  <div class="footer">Life_OS · Version de départ · Tes données restent dans le stockage local de ton navigateur.</div>
 </main>
 <div class="modal" id="modal" role="dialog" aria-modal="true"><div class="dialog"><div class="dialog-head"><h2 id="modalTitle">Modifier</h2><button class="ghost" id="closeModal" aria-label="Fermer">✕</button></div><div id="modalBody"></div><div class="dialog-actions"><button class="secondary" id="cancelModal">Annuler</button><button id="saveModal">Enregistrer</button></div></div></div>
 <script>
@@ -55,7 +55,7 @@ const COLORS=['#5559d9','#e58b39','#1d9a78','#b15dc8','#db5b72','#4386c6','#8b8f
 const DEFAULT_SUBJECTS=[
  {id:'maths',name:'Mathématiques',color:COLORS[0]},{id:'physique',name:'Physique',color:COLORS[1]},{id:'chimie',name:'Chimie',color:COLORS[2]},{id:'si',name:'Sciences de l’ingénieur',color:COLORS[3]},{id:'info',name:'Informatique',color:COLORS[4]},{id:'fr',name:'Français-philosophie',color:COLORS[5]},{id:'anglais',name:'Anglais',color:COLORS[6]},{id:'sport',name:'Sport',color:COLORS[7]}
 ];
-const KEY='tempo-planning-v1';
+const KEY='Life_OS-planning-v1';
 const iso=(d)=>{let x=new Date(d);return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`};
 const today=()=>iso(new Date());
 const plusDays=(date,n)=>{let d=new Date(date+'T12:00:00');d.setDate(d.getDate()+n);return iso(d)};
