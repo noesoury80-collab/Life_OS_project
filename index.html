@@ -155,5 +155,12 @@ document.getElementById('selectedDate').value=today();document.getElementById('s
 const themeBtn=document.getElementById('themeBtn');function applyTheme(dark){document.body.classList.toggle('dark',dark);themeBtn.textContent=dark?'☀️ Mode clair':'🌙 Mode sombre';document.querySelector('meta[name="theme-color"]').content=dark?'#151722':'#f6f7fb';localStorage.setItem('tempo-dark-mode',dark?'1':'0')}applyTheme(localStorage.getItem('tempo-dark-mode')==='1');themeBtn.onclick=()=>applyTheme(!document.body.classList.contains('dark'));render();
 render();
 </script>
+<footer style="text-align:center;padding:18px;font-size:12px;opacity:0.7">
+  © 2026 Tempo — Tous droits réservés.
+  Le code source, le design et les contenus originaux de ce site
+  ne peuvent être copiés, modifiés ou redistribués sans
+  autorisation écrite préalable du titulaire des droits.
+</footer>
+</body>
 </body>
 </html>
