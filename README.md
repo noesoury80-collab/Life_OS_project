@@ -1,4 +1,4 @@
-# Tempo — planning personnel
+# Life_OS_project — planning personnel
 
 Première version d'une application web de planning personnel.
 
