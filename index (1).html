@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f6f7fb">
+<title>Life_OS — Mon planning</title>
+<style>
+:root{--bg:#f6f7fb;--panel:#fff;--ink:#202536;--muted:#6e7485;--line:#e5e8f0;--accent:#5559d9;--accent2:#ececff;--green:#18794e;--red:#b42318;--shadow:0 8px 28px rgba(35,42,70,.06)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+button,input,select,textarea{font:inherit}button{cursor:pointer;border:0;border-radius:11px;padding:10px 14px;background:var(--accent);color:#fff;font-weight:650}button.secondary{background:#f0f1f7;color:var(--ink);border:1px solid var(--line)}button.ghost{background:transparent;color:var(--muted);padding:7px}button.danger{background:#fff0ef;color:var(--red)}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid #b9baff;outline-offset:2px}
+header{background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}.top{max-width:1180px;margin:auto;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;gap:14px}.brand{display:flex;gap:10px;align-items:center;font-weight:850;font-size:20px;letter-spacing:-.5px}.logo{width:35px;height:35px;border-radius:11px;background:var(--accent);color:white;display:grid;place-items:center;font-weight:900}.top small{display:block;color:var(--muted);font-size:12px;font-weight:500;letter-spacing:0}
+main{max-width:1180px;margin:26px auto;padding:0 20px 50px}.welcome{display:flex;justify-content:space-between;align-items:end;gap:16px;margin-bottom:22px}.eyebrow{color:var(--accent);font-weight:750;font-size:12px;text-transform:uppercase;letter-spacing:1.1px}.welcome h1{margin:5px 0;font-size:clamp(26px,4vw,36px);letter-spacing:-1.2px}.sub{color:var(--muted);margin:0}.actions{display:flex;gap:8px;flex-wrap:wrap}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:20px}.stat,.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow)}.stat{padding:16px}.stat label{display:block;color:var(--muted);font-size:12px;margin-bottom:8px}.stat strong{font-size:25px;letter-spacing:-.7px}.stat span{display:block;color:var(--muted);font-size:12px;margin-top:3px}
+.tabs{display:flex;gap:6px;overflow:auto;margin:0 0 16px;padding-bottom:2px}.tab{white-space:nowrap;background:transparent;color:var(--muted);border:1px solid transparent}.tab.active{background:var(--accent2);color:var(--accent);border-color:#d8d8ff}
+.layout{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(280px,.8fr);gap:16px}.panel{padding:19px;min-width:0}.panel-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px}.panel h2{font-size:17px;margin:0;letter-spacing:-.3px}.muted{color:var(--muted)}.small{font-size:12px}.day-controls{display:flex;align-items:center;gap:8px}.day-controls input{max-width:155px}
+input,select,textarea{width:100%;padding:10px 11px;border:1px solid var(--line);border-radius:10px;background:white;color:var(--ink);min-width:0}label.field{display:block;font-size:12px;color:var(--muted);font-weight:650;margin-bottom:6px}.field-wrap{margin-bottom:12px}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.form-grid .full{grid-column:1/-1}.list{display:flex;flex-direction:column;gap:9px}.task{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:11px;align-items:start;padding:12px;border:1px solid var(--line);border-radius:13px;background:#fff}.task.done{opacity:.58}.task.done .task-title{text-decoration:line-through}.check{width:19px;height:19px;margin-top:3px;accent-color:var(--accent)}.task-title{font-weight:750;overflow-wrap:anywhere}.task-meta{font-size:12px;color:var(--muted);margin-top:3px}.pill{display:inline-block;font-size:11px;padding:3px 7px;border-radius:20px;background:#f0f1f7;color:#52586a;margin:5px 4px 0 0}.pill.high{background:#fff0df;color:#9a4c00}.task-actions{display:flex;gap:3px}.task-actions button{padding:6px 8px;font-size:12px}.schedule-item{display:grid;grid-template-columns:105px 5px minmax(0,1fr);gap:10px;align-items:stretch;padding:10px 0;border-bottom:1px solid var(--line)}.schedule-item:last-child{border-bottom:0}.time{font-size:12px;color:var(--muted);font-weight:650;padding-top:2px}.stripe{border-radius:8px;background:var(--accent)}.schedule-title{font-weight:750}.schedule-note{font-size:12px;color:var(--muted)}.empty{padding:25px 12px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:12px}.section{display:none}.section.active{display:block}.subject-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.subject{border:1px solid var(--line);border-radius:13px;padding:13px;display:flex;align-items:center;gap:10px}.dot{width:11px;height:11px;border-radius:4px;flex-shrink:0}.subject strong{display:block}.subject small{color:var(--muted)}.subject button{margin-left:auto}.notice{background:#f0f3ff;border:1px solid #dfe3ff;color:#4247a9;padding:12px;border-radius:12px;font-size:13px;margin-bottom:14px}.weekgrid{display:grid;grid-template-columns:repeat(7,minmax(110px,1fr));gap:8px;overflow:auto}.weekday{border:1px solid var(--line);border-radius:12px;padding:10px;min-height:130px;background:#fff}.weekday h3{font-size:12px;margin:0 0 8px;color:var(--muted)}.week-event{font-size:11px;background:var(--accent2);color:#4145a9;padding:6px;border-radius:7px;margin-bottom:5px;overflow-wrap:anywhere}.footer{text-align:center;color:var(--muted);font-size:12px;margin-top:20px}.modal{position:fixed;inset:0;background:#171a2b88;display:none;align-items:center;justify-content:center;padding:16px;z-index:20}.modal.open{display:flex}.dialog{background:white;border-radius:18px;padding:22px;width:min(540px,100%);max-height:90vh;overflow:auto;box-shadow:0 20px 70px #0003}.dialog-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}.dialog h2{margin:0;font-size:20px}.dialog-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+@media(max-width:800px){.layout{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.welcome{align-items:start;flex-direction:column}.top{padding:12px 15px}main{padding:0 14px 35px;margin-top:20px}.panel{padding:15px}.subject-list{grid-template-columns:1fr}.schedule-item{grid-template-columns:88px 4px minmax(0,1fr)}}
+@media(max-width:420px){.stats{gap:8px}.stat{padding:12px}.stat strong{font-size:22px}.form-grid{grid-template-columns:1fr}.form-grid .full{grid-column:auto}.actions button{flex:1}.brand{font-size:18px}}
+.schedule-item.done{opacity:.45}.schedule-item.done .schedule-title{text-decoration:line-through}.week-event.done{opacity:.45;text-decoration:line-through}.live-time{display:flex;align-items:center;gap:8px;color:var(--accent);font-size:12px;font-weight:750;padding:7px 0}.live-time:before{content:"";width:10px;height:10px;border-radius:50%;background:var(--accent);flex-shrink:0}.live-line{height:2px;background:var(--accent);flex:1;border-radius:2px}.progress-track{height:5px;background:#ececf5;border-radius:9px;overflow:hidden;margin-top:7px}.progress-fill{height:100%;background:var(--accent);border-radius:9px}
+.workload-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:0 0 20px}
+.workload-card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:var(--shadow);min-width:0}
+.workload-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.workload-head h2{font-size:16px;margin:0}
+.workload-meter{height:9px;background:#ececf5;border-radius:99px;overflow:hidden;margin:10px 0}
+.workload-meter-fill{height:100%;width:0;background:var(--accent);border-radius:99px;transition:width .2s}
+.workload-meter-fill.level-light{background:#26966b}.workload-meter-fill.level-normal{background:#6686d8}.workload-meter-fill.level-high{background:#e5a23d}.workload-meter-fill.level-heavy{background:#d9534f}
+.workload-badge{display:inline-block;border-radius:99px;padding:4px 8px;font-size:11px;font-weight:750;background:var(--accent2);color:var(--accent)}
+.workload-badge.level-light{background:#e3f7ed;color:#18794e}.workload-badge.level-normal{background:#e8edff;color:#4358a8}.workload-badge.level-high{background:#fff0df;color:#9a4c00}.workload-badge.level-heavy{background:#ffebea;color:#b42318}
+.priority-suggestion{padding:9px 0;border-bottom:1px solid var(--line)}
+.priority-suggestion:last-child{border-bottom:0;padding-bottom:0}
+.priority-suggestion strong{display:block;font-size:13px}
+.priority-suggestion small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+@media(max-width:650px){.workload-grid{grid-template-columns:1fr}}
+body.dark .workload-meter{background:#383d50}
+body.dark .workload-badge.level-light{background:#234637;color:#8ce0b6}
+body.dark .workload-badge.level-normal{background:#303b60;color:#bdcaff}
+body.dark .workload-badge.level-high{background:#493725;color:#ffd09b}
+body.dark .workload-badge.level-heavy{background:#492b32;color:#ffaaa5}
+
+body.dark{--bg:#151722;--panel:#202331;--ink:#edf0fa;--muted:#a6acc0;--line:#383d50;--accent:#8588ff;--accent2:#303251;--green:#55c995;--red:#ff817a;--shadow:0 8px 28px rgba(0,0,0,.18)}body.dark input,body.dark select,body.dark textarea,body.dark .task,body.dark .weekday,body.dark .dialog{background:#252939;color:var(--ink);border-color:var(--line)}body.dark button.secondary{background:#303447;color:var(--ink);border-color:var(--line)}body.dark button.danger{background:#492b32;color:#ffaaa5}body.dark .pill{background:#303447;color:#d9def0}body.dark .pill.high{background:#493725;color:#ffd09b}body.dark .notice{background:#292d49;border-color:#3d426d;color:#c6c8ff}body.dark .week-event{background:#303251;color:#d4d5ff}body.dark .progress-track{background:#383d50}body.dark .tab.active{border-color:#484b82}body.dark .dialog{box-shadow:0 20px 70px #0008}
+</style>
+</head>
+<body>
+<header><div class="top"><div class="brand"><div class="logo">T</div><div>tempo<small>ton planning, à ton rythme</small></div></div><div style="display:flex;gap:8px"><button class="secondary" id="themeBtn" type="button">🌙 Mode sombre</button><button class="secondary" id="accountBtn" type="button" onclick="openAccount()">👤 Mon compte</button><button class="secondary" id="settingsBtn">⚙ Réglages</button></div></div></header>
+<main>
+  <div class="welcome"><div><div class="eyebrow">Espace personnel</div><h1>On organise ta journée.</h1><p class="sub" id="todayLabel"></p></div><div class="actions"><button class="secondary" id="addTaskTop">＋ Ajouter une tâche</button><button id="generateBtn">✦ Générer mon planning</button></div></div>
+  <div class="stats">
+    <div class="stat"><label>À faire aujourd'hui</label><strong id="statTasks">0</strong><span>tâches non terminées</span></div>
+    <div class="stat"><label>Temps planifié</label><strong id="statTime">0 h</strong><span>hors pauses libres</span></div>
+    <div class="stat"><label>Objectif sport</label><strong id="statSport">0 / 2 h</strong><span>cette semaine</span></div>
+    <div class="stat"><label>À réviser en priorité</label><strong id="statPriority">0</strong><span>tâches urgentes ou importantes</span></div>
+  </div>
+  <div class="workload-grid">
+    <section class="workload-card" aria-live="polite">
+      <div class="workload-head"><h2>📊 Charge de travail</h2><span id="workloadBadge" class="workload-badge">Calcul en cours</span></div>
+      <div><strong id="workloadHours">0 min</strong> <span class="muted small">de travail prévu aujourd’hui</span></div>
+      <div class="workload-meter"><div id="workloadMeterFill" class="workload-meter-fill"></div></div>
+      <p id="workloadComparison" class="muted small" style="margin:0">Comparaison avec ton rythme habituel…</p>
+    </section>
+    <section class="workload-card" aria-live="polite">
+      <div class="workload-head"><h2>🎯 Priorités suggérées</h2></div>
+      <div id="prioritySuggestions"><p class="muted small">Analyse de tes tâches…</p></div>
+    </section>
+  </div>
+  <nav class="tabs" aria-label="Navigation">
+    <button class="tab active" data-tab="today">Aujourd'hui</button><button class="tab" data-tab="week">Semaine</button><button class="tab" data-tab="tasks">Mes tâches</button><button class="tab" data-tab="subjects">Mes matières</button>
+  </nav>
+  <section id="today" class="section active">
+    <div class="layout">
+      <div class="panel"><div class="panel-head"><h2>Programme du jour</h2><div class="day-controls"><button class="secondary" id="prevDay" aria-label="Jour précédent">‹</button><input type="date" id="selectedDate"><button class="secondary" id="nextDay" aria-label="Jour suivant">›</button></div></div><div id="scheduleList" class="list"></div><p class="small muted">Tu peux modifier une tâche depuis « Mes tâches ». La génération respecte les horaires bloqués et l'arrêt à 23 h.</p></div>
+      <div class="panel"><div class="panel-head"><h2>Ajouter rapidement</h2></div><form id="quickTaskForm">
+        <div class="field-wrap"><label class="field" for="qTitle">Que dois-tu faire ?</label><input id="qTitle" required placeholder="Ex. Revoir les limites"></div>
+        <div class="form-grid"><div class="field-wrap"><label class="field" for="qSubject">Matière</label><select id="qSubject"></select></div><div class="field-wrap"><label class="field" for="qDuration">Durée (min)</label><input id="qDuration" type="number" min="10" step="5" value="45"></div><div class="field-wrap"><label class="field" for="qPriority">Priorité</label><select id="qPriority"><option value="1">Normale</option><option value="2">Importante</option><option value="3">Urgente</option></select></div><div class="field-wrap"><label class="field" for="qDue">Échéance</label><input id="qDue" type="date"></div></div><button type="submit" style="width:100%">Ajouter à mes tâches</button></form>
+        <div style="height:1px;background:var(--line);margin:18px 0"></div><h2 style="margin-bottom:10px">Règles de base</h2><div class="notice">🌙 Fin des activités planifiées : <strong>23 h</strong><br>🍽️ Dîner réservé : <strong>1 heure</strong><br>🏃 Sport : <strong>2 h par semaine minimum</strong></div><p class="small muted">Ces règles sont modifiables dans Réglages. La sauvegarde actuelle se fait sur cet appareil.</p>
+      </div>
+    </div>
+  </section>
+  <section id="week" class="section"><div class="panel"><div class="panel-head"><h2>Vue de la semaine</h2><button class="secondary" id="weekGenerate">Générer cette semaine</button></div><div class="notice">La vue semaine affiche les tâches planifiées. Les cours fixes et la synchronisation de calendrier pourront être ajoutés ensuite.</div><div id="weekGrid" class="weekgrid"></div></div></section>
+  <section id="tasks" class="section"><div class="panel"><div class="panel-head"><h2>Toutes mes tâches</h2><button id="addTask" >＋ Nouvelle tâche</button></div><div class="form-grid" style="margin-bottom:14px"><div><label class="field" for="taskFilter">Filtrer par matière</label><select id="taskFilter"><option value="">Toutes les matières</option></select></div><div><label class="field" for="statusFilter">État</label><select id="statusFilter"><option value="open">À faire</option><option value="all">Toutes</option><option value="done">Terminées</option></select></div></div><div id="allTasks" class="list"></div></div></section>
+  <section id="subjects" class="section"><div class="panel"><div class="panel-head"><h2>Mes matières</h2><button id="addSubject">＋ Ajouter une matière</button></div><p class="muted small">Les matières servent à classer tes tâches et à répartir les séances de révision.</p><div id="subjectList" class="subject-list"></div></div></section>
+  <div class="footer">Life_OS · Version de départ · Tes données restent dans le stockage local de ton navigateur.</div>
+</main>
+<div class="modal" id="timetableModal" role="dialog" aria-modal="true"><div class="dialog"><div class="dialog-head"><h2>📅 Mon emploi du temps</h2><button class="ghost" type="button" onclick="closeTimetable()">✕</button></div><p class="muted small">Ajoute tes cours fixes pour que Tempo puisse ensuite organiser tes révisions autour.</p><div class="field-wrap"><label class="field" for="ttTitle">Nom du cours</label><input id="ttTitle" placeholder="Ex. Mathématiques"></div><div class="form-grid"><div class="field-wrap"><label class="field" for="ttDay">Jour</label><select id="ttDay"><option value="1">Lundi</option><option value="2">Mardi</option><option value="3">Mercredi</option><option value="4">Jeudi</option><option value="5">Vendredi</option><option value="6">Samedi</option><option value="0">Dimanche</option></select></div><div class="field-wrap"><label class="field" for="ttWeek">Semaine</label><select id="ttWeek"><option value="all">Toutes</option><option value="A">A</option><option value="B">B</option></select></div><div class="field-wrap"><label class="field" for="ttStart">Début</label><input id="ttStart" type="time" value="08:00"></div><div class="field-wrap"><label class="field" for="ttEnd">Fin</label><input id="ttEnd" type="time" value="10:00"></div></div><button type="button" style="width:100%" onclick="addTimetableEntry()">＋ Ajouter ce cours</button><div style="height:1px;background:var(--line);margin:18px 0"></div><div class="field-wrap"><label class="field" for="ttFile">Importer un fichier calendrier (.ics)</label><input id="ttFile" type="file" accept=".ics,text/calendar"></div><button type="button" class="secondary" style="width:100%;margin-bottom:16px" onclick="importTimetableFile()">Importer le fichier</button><div id="timetableList" class="list"></div></div></div>
+<div class="modal" id="accountModal" role="dialog" aria-modal="true">
+  <div class="dialog">
+    <div class="dialog-head">
+      <h2>Mon compte Tempo</h2>
+      <button class="ghost" type="button" onclick="closeAccount()">✕</button>
+    </div>
+    <p id="accountStatus" class="muted small">Connecte-toi ou crée ton compte.</p>
+    <div id="accountForm">
+      <div class="field-wrap">
+        <label class="field" for="accountEmail">Adresse e-mail</label>
+        <input id="accountEmail" type="email" autocomplete="email" placeholder="toi@exemple.fr" required>
+      </div>
+      <div class="field-wrap">
+        <label class="field" for="accountPassword">Mot de passe</label>
+        <input id="accountPassword" type="password" autocomplete="current-password" minlength="8" placeholder="8 caractères minimum" required>
+      </div>
+      <div style="display:grid;gap:8px">
+        <button type="button" onclick="signInAccount()">Se connecter</button>
+        <button class="secondary" type="button" onclick="signUpAccount()">Créer un compte</button>
+      </div>
+    </div>
+    <div id="accountConnected" style="display:none">
+      <button type="button" onclick="signOutAccount()">Se déconnecter</button>
+    </div>
+    <div class="dialog-actions">
+      <button class="secondary" type="button" onclick="closeAccount()">Fermer</button>
+    </div>
+  </div>
+</div>
+<div class="modal" id="modal" role="dialog" aria-modal="true"><div class="dialog"><div class="dialog-head"><h2 id="modalTitle">Modifier</h2><button class="ghost" id="closeModal" aria-label="Fermer">✕</button></div><div id="modalBody"></div><div class="dialog-actions"><button class="secondary" id="cancelModal">Annuler</button><button id="saveModal">Enregistrer</button></div></div></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const COLORS=['#5559d9','#e58b39','#1d9a78','#b15dc8','#db5b72','#4386c6','#8b8f9d','#b39b2f'];
+const DEFAULT_SUBJECTS=[
+ {id:'maths',name:'Mathématiques',color:COLORS[0]},{id:'physique',name:'Physique',color:COLORS[1]},{id:'chimie',name:'Chimie',color:COLORS[2]},{id:'si',name:'Sciences de l’ingénieur',color:COLORS[3]},{id:'info',name:'Informatique',color:COLORS[4]},{id:'fr',name:'Français-philosophie',color:COLORS[5]},{id:'anglais',name:'Anglais',color:COLORS[6]},{id:'sport',name:'Sport',color:COLORS[7]}
+];
+const KEY='Life_OS-planning-v1';
+const SUPABASE_URL='https://znulmjmnduqulezqskoi.supabase.co';
+const SUPABASE_KEY='sb_publishable_XNnTO9qPqslOD4Jy56rJrA__IO7wijr';
+const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+let currentUser=null;
+let cloudReady=false,syncTimer=null;
+function scheduleCloudSave(){if(!currentUser||!cloudReady)return;clearTimeout(syncTimer);syncTimer=setTimeout(()=>syncToCloud(),800)}
+async function syncToCloud(){if(!currentUser||!cloudReady)return;const userId=currentUser.id;const snapshot=JSON.parse(JSON.stringify(state));const {error}=await supabaseClient.from('tempo_data').upsert({user_id:userId,data:snapshot,updated_at:new Date().toISOString()},{onConflict:'user_id'});if(error){console.error('Erreur de synchronisation Tempo :',error);document.getElementById('accountStatus').textContent='Connecté, mais synchronisation impossible : '+error.message;return}document.getElementById('accountStatus').textContent='✅ Connecté et synchronisé : '+currentUser.email}
+async function loadCloudState(user){cloudReady=false;try{const {data,error}=await supabaseClient.from('tempo_data').select('data').eq('user_id',user.id).maybeSingle();if(error)throw error;const owner=localStorage.getItem('tempo-planning-owner');if(data&&data.data&&Array.isArray(data.data.subjects)&&Array.isArray(data.data.tasks)){localStorage.setItem(KEY+'-backup-before-cloud-'+user.id,localStorage.getItem(KEY)||'null');state=data.data;state.settings={dinnerStart:'19:00',dayStart:'18:30',endTime:'23:00',sportGoal:120,...state.settings};state.plans=state.plans||{};localStorage.setItem(KEY,JSON.stringify(state));localStorage.setItem('tempo-planning-owner',user.id);render();cloudReady=true;document.getElementById('accountStatus').textContent='Connecté : '+user.email+' · données synchronisées';return}if(owner&&owner!==user.id){localStorage.setItem(KEY+'-backup-before-cloud-'+owner,localStorage.getItem(KEY)||'null');state={subjects:DEFAULT_SUBJECTS.map(s=>({...s})),tasks:[],settings:{dinnerStart:'19:00',dayStart:'18:30',endTime:'23:00',sportGoal:120},plans:{}};localStorage.setItem(KEY,JSON.stringify(state));render()}const {error:uploadError}=await supabaseClient.from('tempo_data').upsert({user_id:user.id,data:state,updated_at:new Date().toISOString()},{onConflict:'user_id'});if(uploadError)throw uploadError;localStorage.setItem('tempo-planning-owner',user.id);cloudReady=true;document.getElementById('accountStatus').textContent='Connecté : '+user.email+' · données synchronisées'}catch(error){cloudReady=false;console.error('Erreur de chargement Tempo :',error);document.getElementById('accountStatus').textContent='Erreur de synchronisation : '+error.message;alert('Tempo est connecté, mais la synchronisation a échoué : '+error.message)}}
+async function openAccount(){const {data:{session}}=await supabaseClient.auth.getSession();currentUser=session?.user||null;document.getElementById('accountStatus').textContent=currentUser?(cloudReady?'✅ Connecté et synchronisé : '+currentUser.email:'⏳ Connecté, synchronisation en cours…'):'Connecte-toi ou crée ton compte.';document.getElementById('accountForm').style.display=currentUser?'none':'block';document.getElementById('accountConnected').style.display=currentUser?'block':'none';document.getElementById('accountModal').classList.add('open')}
+function closeAccount(){document.getElementById('accountModal').classList.remove('open')}
+async function signInAccount(){const email=document.getElementById('accountEmail').value.trim();const password=document.getElementById('accountPassword').value;if(!email||!password){alert('Renseigne ton e-mail et ton mot de passe.');return}const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});if(error){alert('Connexion impossible : '+error.message);return}currentUser=data.user;await openAccount();alert('Connexion réussie !')}
+async function signUpAccount(){const email=document.getElementById('accountEmail').value.trim();const password=document.getElementById('accountPassword').value;if(!email||password.length<8){alert('Renseigne ton e-mail et un mot de passe de 8 caractères minimum.');return}const {data,error}=await supabaseClient.auth.signUp({email,password});if(error){alert('Création impossible : '+error.message);return}if(data.session){currentUser=data.user;await openAccount();alert('Compte créé et connecté !')}else{document.getElementById('accountStatus').textContent='Compte créé. Vérifie ta boîte mail pour confirmer ton adresse, puis connecte-toi.';alert('Un e-mail de confirmation a été envoyé si la confirmation est activée.');}}
+async function signOutAccount(){const {error}=await supabaseClient.auth.signOut();if(error){alert('Déconnexion impossible : '+error.message);return}currentUser=null;await openAccount()}
+supabaseClient.auth.onAuthStateChange((event,session)=>{currentUser=session?.user||null;if((event==='INITIAL_SESSION'||event==='SIGNED_IN')&&session?.user)setTimeout(()=>loadCloudState(session.user),0);if(event==='SIGNED_OUT'){cloudReady=false;clearTimeout(syncTimer)}});
+const iso=(d)=>{let x=new Date(d);return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`};
+const today=()=>iso(new Date());
+const plusDays=(date,n)=>{let d=new Date(date+'T12:00:00');d.setDate(d.getDate()+n);return iso(d)};
+const uid=()=>Math.random().toString(36).slice(2,10);
+let state=loadState(), editingTask=null, editingSubject=null, settingsEdit=false;
+function loadState(){try{let raw=localStorage.getItem(KEY);if(!raw)raw=localStorage.getItem('tempo-planning-v1');let s=JSON.parse(raw);if(s&&s.subjects&&s.tasks){s.settings={dinnerStart:'19:00',dayStart:'18:30',endTime:'23:00',sportGoal:120,...s.settings};s.plans=s.plans||{};let now=Date.now(),week=7*24*60*60*1000,expired=new Set();s.tasks=s.tasks.filter(t=>{if(!t.done){delete t.completedAt;return true}if(!t.completedAt){t.completedAt=now;return true}if(now-t.completedAt>=week){expired.add(t.id);return false}return true});for(let d in s.plans)s.plans[d]=s.plans[d].filter(x=>!expired.has(x.taskId));localStorage.setItem(KEY,JSON.stringify(s));return s}}catch(e){}return {subjects:DEFAULT_SUBJECTS,tasks:[],settings:{dinnerStart:'19:00',dayStart:'18:30',endTime:'23:00',sportGoal:120},plans:{}}}
+function save(){localStorage.setItem(KEY,JSON.stringify(state));render();scheduleCloudSave()}
+function escapeHtml(s=''){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function subject(id){return state.subjects.find(s=>s.id===id)||{name:'Autre',color:'#888'}}
+function dateLabel(d){return new Date(d+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}
+function minsLabel(n){return n>=60?`${Math.floor(n/60)} h${n%60?` ${n%60} min`:''}`:`${n} min`}
+function showTab(id){document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===id));document.querySelectorAll('.section').forEach(s=>s.classList.toggle('active',s.id===id));if(id==='week')renderWeek();if(id==='tasks')renderTasks()}
+function planFor(date){return state.plans[date]||[]}
+function taskFor(id){return state.tasks.find(t=>t.id===id)}
+function render(){document.getElementById('todayLabel').textContent=dateLabel(document.getElementById('selectedDate').value||today());fillSubjectSelects();renderSchedule();renderTasks();renderSubjects();renderStats();renderWorkloadAndPriorities();renderWeek()}
+function fillSubjectSelects(){const opts=state.subjects.map(s=>`<option value="${escapeHtml(s.id)}">${escapeHtml(s.name)}</option>`).join('');['qSubject'].forEach(id=>{let el=document.getElementById(id),v=el.value;el.innerHTML=opts;if(state.subjects.some(s=>s.id===v))el.value=v});let f=document.getElementById('taskFilter'),v=f.value;f.innerHTML='<option value="">Toutes les matières</option>'+opts;if(state.subjects.some(s=>s.id===v))f.value=v}
+function renderStats(){const d=document.getElementById('selectedDate').value||today(),p=planFor(d);const ids=p.map(x=>x.taskId);let active=p.filter(x=>{let t=taskFor(x.taskId);return t&&!t.done});document.getElementById('statTasks').textContent=active.length;document.getElementById('statTime').textContent=minsLabel(active.reduce((a,x)=>a+(x.duration||0),0));let start=plusDays(today(),-((new Date(today()+'T12:00:00').getDay()+6)%7)),end=plusDays(start,6),sport=0;for(let day=start;day<=end;day=plusDays(day,1))for(const x of planFor(day)){let t=taskFor(x.taskId);if(t&&t.subjectId==='sport'&&!t.done)sport+=x.duration||t.duration}document.getElementById('statSport').textContent=`${Math.floor(sport/60)} / ${Math.ceil(state.settings.sportGoal/60)} h`;document.getElementById('statPriority').textContent=state.tasks.filter(t=>!t.done&&t.priority>=2).length}
+
+function renderWorkloadAndPriorities(){
+  const date=document.getElementById('selectedDate').value||today();
+  const plan=planFor(date);
+  const activePlan=plan.filter(x=>{const t=taskFor(x.taskId);return t&&!t.done});
+  const minutes=activePlan.reduce((sum,x)=>sum+(Number(x.duration)||0),0);
+  const hours=minutes/60;
+  const formatHours=m=>{const h=Math.floor(m/60),r=m%60;return h?`${h} h${r?` ${r} min`:''}`:`${r} min`};
+  document.getElementById('workloadHours').textContent=formatHours(minutes);
+  const badge=document.getElementById('workloadBadge');
+  const fill=document.getElementById('workloadMeterFill');
+  let level,label;
+  if(hours<2){level='light';label='Légère'}
+  else if(hours<3.5){level='normal';label='Modérée'}
+  else if(hours<5){level='high';label='Élevée'}
+  else{level='heavy';label='Très élevée'}
+  const pastDays=[];
+  for(let i=21;i>=1;i--){
+    const d=plusDays(date,-i),p=planFor(d);
+    const dayMinutes=p.reduce((sum,x)=>{const t=taskFor(x.taskId);return sum+(t?(Number(x.duration)||Number(t.duration)||0):0)},0);
+    if(dayMinutes>0)pastDays.push(dayMinutes);
+  }
+  const enoughHistory=pastDays.length>=3;
+  let comparison='',meterPercent=Math.min(100,Math.max(8,(hours/5)*100));
+  if(enoughHistory){
+    const average=pastDays.reduce((a,b)=>a+b,0)/pastDays.length;
+    const ratio=average>0?minutes/average:1;
+    if(ratio<0.8){level='light';label='Plus légère que d’habitude'}
+    else if(ratio<=1.2){level='normal';label='Dans tes habitudes'}
+    else if(ratio<=1.5){level='high';label='Plus chargée que d’habitude'}
+    else{level='heavy';label='Très chargée'}
+    meterPercent=Math.min(100,Math.max(8,ratio*60));
+    const percent=Math.round(Math.abs(ratio-1)*100);
+    comparison=minutes===0?'Aucun travail prévu pour cette journée.':ratio<0.8?`${percent} % de travail en moins que ta moyenne des ${pastDays.length} jours actifs précédents (${formatHours(Math.round(average))} par jour).`:ratio<=1.2?`Proche de ta moyenne des ${pastDays.length} jours actifs précédents (${formatHours(Math.round(average))} par jour).`:`${percent} % de travail en plus que ta moyenne des ${pastDays.length} jours actifs précédents (${formatHours(Math.round(average))} par jour).`;
+  }else{
+    comparison=minutes===0?'Ajoute ou planifie des tâches pour mesurer ta charge.':'Pas encore assez d’historique : le niveau repose sur la durée prévue. La comparaison arrivera après 3 jours passés avec du travail planifié.';
+  }
+  badge.className='workload-badge level-'+level;badge.textContent=label;
+  fill.className='workload-meter-fill level-'+level;fill.style.width=meterPercent+'%';
+  document.getElementById('workloadComparison').textContent=comparison;
+  const nowDate=today();
+  const candidates=state.tasks.filter(t=>!t.done).map(t=>{
+    const due=t.due||'';let score=(Number(t.priority)||1)*3;
+    let reason=t.priority===3?'Priorité urgente':t.priority===2?'Priorité importante':'Priorité normale';
+    if(due){
+      const days=Math.round((new Date(due+'T12:00:00')-new Date(nowDate+'T12:00:00'))/86400000);
+      if(days<0){score+=12;reason='Échéance dépassée · '+reason}
+      else if(days===0){score+=10;reason='À rendre aujourd’hui · '+reason}
+      else if(days===1){score+=7;reason='À rendre demain · '+reason}
+      else if(days<=3){score+=4;reason='Échéance dans '+days+' jours · '+reason}
+    }
+    if(plan.some(x=>x.taskId===t.id))score+=1;
+    return {task:t,score,reason};
+  }).sort((a,b)=>b.score-a.score||(a.task.due||'9999').localeCompare(b.task.due||'9999')||(Number(b.task.duration)||45)-(Number(a.task.duration)||45)).slice(0,3);
+  const target=document.getElementById('prioritySuggestions');
+  if(!candidates.length){target.innerHTML='<p class="muted small">Aucune tâche en attente. Tu es à jour !</p>';return}
+  target.innerHTML=candidates.map((item,index)=>{
+    const t=item.task,d=t.due?' · échéance '+new Date(t.due+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'}):'';
+    return `<div class="priority-suggestion"><strong>${index+1}. ${escapeHtml(t.title)}</strong><small>${escapeHtml(item.reason)} · ${minsLabel(Number(t.duration)||45)}${d}</small></div>`;
+  }).join('');
+}
+
+function renderSchedule(){const d=document.getElementById('selectedDate').value||today(),list=document.getElementById('scheduleList');let p=planFor(d).slice().sort((a,b)=>a.start.localeCompare(b.start));if(!p.length){list.innerHTML='<div class="empty">Aucune activité planifiée pour cette journée.<br><br>Clique sur <strong>Générer mon planning</strong> pour organiser tes tâches.</div>';return}list.innerHTML=p.map(x=>{let t=taskFor(x.taskId);if(!t)return '';let s=subject(t.subjectId);return `<div class="schedule-item"><div class="time">${escapeHtml(x.start)} – ${escapeHtml(addMinutes(x.start,x.duration))}<br>${minsLabel(x.duration)}</div><div class="stripe" style="background:${s.color}"></div><div><div class="schedule-title">${escapeHtml(t.title)} ${t.done?'✓':''}</div><div class="schedule-note">${escapeHtml(s.name)} · ${t.priority===3?'Urgent':t.priority===2?'Important':'Normal'}</div><div class="task-actions" style="margin-top:6px"><button class="secondary" onclick="toggleDone('${t.id}')">${t.done?'À refaire':'Terminé'}</button><button class="secondary" onclick="editTask('${t.id}')">Modifier</button><button class="secondary" onclick="removeFromPlan('${d}','${t.id}')">Retirer</button></div></div></div>`}).join('')}
+function addMinutes(time,n){let [h,m]=time.split(':').map(Number);let z=h*60+m+n;return `${String(Math.floor(z/60)).padStart(2,'0')}:${String(z%60).padStart(2,'0')}`}
+function renderTasks(){let all=document.getElementById('allTasks');if(!all)return;let filter=document.getElementById('taskFilter').value,status=document.getElementById('statusFilter').value;let ts=state.tasks.filter(t=>(!filter||t.subjectId===filter)&&(status==='all'||(status==='done'?t.done:!t.done))).sort((a,b)=>b.priority-a.priority||(a.due||'9999').localeCompare(b.due||'9999'));all.innerHTML=ts.length?ts.map(taskCard).join(''):'<div class="empty">Aucune tâche dans cette sélection. Ajoute-en une pour commencer.</div>'}
+function taskCard(t){let s=subject(t.subjectId);return `<div class="task ${t.done?'done':''}"><input class="check" type="checkbox" ${t.done?'checked':''} aria-label="Tâche terminée" onchange="toggleDone('${t.id}')"><div><div class="task-title">${escapeHtml(t.title)}</div><div class="task-meta">${escapeHtml(s.name)} · ${minsLabel(t.duration)}${t.due?' · échéance '+new Date(t.due+'T12:00:00').toLocaleDateString('fr-FR'):''}</div><span class="pill ${t.priority===3?'high':''}">${t.priority===3?'Urgente':t.priority===2?'Importante':'Normale'}</span>${t.notes?`<div class="task-meta">${escapeHtml(t.notes)}</div>`:''}</div><div class="task-actions"><button class="secondary" onclick="editTask('${t.id}')">Modifier</button><button class="secondary" onclick="deleteTask('${t.id}')">✕</button></div></div>`}
+function renderSubjects(){document.getElementById('subjectList').innerHTML=state.subjects.map(s=>`<div class="subject"><span class="dot" style="background:${s.color}"></span><div><strong>${escapeHtml(s.name)}</strong><small>${state.tasks.filter(t=>t.subjectId===s.id&&!t.done).length} tâche(s) à faire</small></div><button class="secondary" onclick="editSubject('${s.id}')">Modifier</button></div>`).join('')}
+function renderWeek(){let el=document.getElementById('weekGrid');if(!el)return;let selected=document.getElementById('selectedDate').value||today(),monday=plusDays(selected,-((new Date(selected+'T12:00:00').getDay()+6)%7));el.innerHTML=Array.from({length:7},(_,i)=>{let d=plusDays(monday,i),p=planFor(d);return `<div class="weekday"><h3>${new Date(d+'T12:00:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'numeric'})}</h3>${p.length?p.map(x=>{let t=taskFor(x.taskId);return t?`<div class="week-event ${t.done?'done':''}" title="${escapeHtml(t.title)}">${t.done?'✓ ':''}${escapeHtml(x.start)} · ${escapeHtml(t.title)}</div>`:''}).join(''):'<span class="small muted">Rien de prévu</span>'}</div>`}).join('')}
+function addTask(data){state.tasks.push({id:uid(),title:data.title,subjectId:data.subjectId||state.subjects[0]?.id,duration:Math.max(10,Number(data.duration)||45),priority:Number(data.priority)||1,due:data.due||'',notes:data.notes||'',done:false});save()}
+function quickAdd(e){e.preventDefault();addTask({title:document.getElementById('qTitle').value.trim(),subjectId:document.getElementById('qSubject').value,duration:document.getElementById('qDuration').value,priority:document.getElementById('qPriority').value,due:document.getElementById('qDue').value});e.target.reset();document.getElementById('qDuration').value=45;showTab('tasks')}
+function toggleDone(id){let t=taskFor(id);if(!t)return;if(t.done){t.done=false;delete t.completedAt;save();return}openModal('Terminer la tâche',`<p>Que veux-tu faire de cette tâche ?</p><div style="display:grid;gap:10px"><button type="button" onclick="finishTaskChoice('${id}','keep')">✓ Garder la tâche terminée</button><button type="button" class="danger" onclick="finishTaskChoice('${id}','delete')">Supprimer définitivement</button><button type="button" class="secondary" onclick="cancelFinishChoice()">Annuler</button></div>`);document.querySelector('.dialog-actions').style.display='none'}
+function finishTaskChoice(id,choice){let t=taskFor(id);if(!t){closeModal();render();return}if(choice==='delete'&&!confirm('Supprimer cette tâche de tous les plannings ?'))return;if(choice==='delete'){state.tasks=state.tasks.filter(x=>x.id!==id);for(const d in state.plans)state.plans[d]=state.plans[d].filter(x=>x.taskId!==id)}else{t.done=true;t.completedAt=Date.now()}closeModal();save()}
+function cancelFinishChoice(){closeModal();render()}
+function deleteTask(id){if(!confirm('Supprimer cette tâche ?'))return;state.tasks=state.tasks.filter(t=>t.id!==id);for(let d in state.plans)state.plans[d]=state.plans[d].filter(x=>x.taskId!==id);save()}
+function removeFromPlan(d,id){state.plans[d]=planFor(d).filter(x=>x.taskId!==id);save()}
+function openModal(title,body){document.getElementById('modalTitle').textContent=title;document.getElementById('modalBody').innerHTML=body;document.getElementById('modal').classList.add('open')}
+function closeModal(){document.getElementById('modal').classList.remove('open');editingTask=null;editingSubject=null;settingsEdit=false}
+function editTask(id){let t=id?taskFor(id):null;editingTask=id||'new';openModal(t?'Modifier la tâche':'Nouvelle tâche',`<div class="field-wrap"><label class="field">Intitulé</label><input id="mTitle" value="${escapeHtml(t?.title||'')}" required></div><div class="form-grid"><div class="field-wrap"><label class="field">Matière</label><select id="mSubject">${state.subjects.map(s=>`<option value="${s.id}" ${s.id===(t?.subjectId||state.subjects[0]?.id)?'selected':''}>${escapeHtml(s.name)}</option>`).join('')}</select></div><div class="field-wrap"><label class="field">Durée (minutes)</label><input id="mDuration" type="number" min="10" step="5" value="${t?.duration||45}"></div><div class="field-wrap"><label class="field">Priorité</label><select id="mPriority"><option value="1" ${t?.priority===1?'selected':''}>Normale</option><option value="2" ${t?.priority===2?'selected':''}>Importante</option><option value="3" ${t?.priority===3?'selected':''}>Urgente</option></select></div><div class="field-wrap"><label class="field">Échéance</label><input id="mDue" type="date" value="${t?.due||''}"></div><div class="field-wrap full"><label class="field">Notes / objectif précis</label><textarea id="mNotes" rows="3" placeholder="Ex. refaire les exercices 2 et 3">${escapeHtml(t?.notes||'')}</textarea></div></div>`)}
+function saveModal(){if(settingsEdit){state.settings.dayStart=document.getElementById('sStart').value;state.settings.dinnerStart=document.getElementById('sDinner').value;state.settings.endTime=document.getElementById('sEnd').value;state.settings.sportGoal=Number(document.getElementById('sSport').value)||120;closeModal();save();return}if(editingSubject){let s=state.subjects.find(x=>x.id===editingSubject);if(s){let name=document.getElementById('mSubName').value.trim();if(name)s.name=name}closeModal();save();return}if(editingTask){let title=document.getElementById('mTitle').value.trim();if(!title){alert('Donne un titre à la tâche.');return}let data={title,subjectId:document.getElementById('mSubject').value,duration:document.getElementById('mDuration').value,priority:document.getElementById('mPriority').value,due:document.getElementById('mDue').value,notes:document.getElementById('mNotes').value};if(editingTask==='new'){addTask(data)}else{let t=taskFor(editingTask);if(!t){closeModal();return}const duration=Math.max(10,Number(data.duration)||45);Object.assign(t,{...data,duration,priority:Number(data.priority)});for(const date in state.plans){for(const item of state.plans[date]){if(item.taskId===t.id){item.duration=duration}}}save()}closeModal()}}
+function editSubject(id){editingSubject=id;let s=state.subjects.find(x=>x.id===id);openModal('Modifier la matière',`<div class="field-wrap"><label class="field">Nom de la matière</label><input id="mSubName" value="${escapeHtml(s.name)}"></div><p class="small muted">La suppression de matière sera ajoutée dans une prochaine version.</p>`)}
+function openTimetable(){document.getElementById('timetableModal').classList.add('open');renderTimetable()}
+function closeTimetable(){document.getElementById('timetableModal').classList.remove('open')}
+function getTimetable(){return JSON.parse(localStorage.getItem(KEY+'-timetable')||'[]')}
+function saveTimetable(items){localStorage.setItem(KEY+'-timetable',JSON.stringify(items));renderTimetable()}
+function addTimetableEntry(){let title=document.getElementById('ttTitle').value.trim(),day=Number(document.getElementById('ttDay').value),week=document.getElementById('ttWeek').value,start=document.getElementById('ttStart').value,end=document.getElementById('ttEnd').value;if(!title||!start||!end||start>=end){alert('Vérifie le nom du cours et les horaires.');return}let items=getTimetable();items.push({id:uid(),title,day,week,start,end});saveTimetable(items);document.getElementById('ttTitle').value=''}
+function deleteTimetableEntry(id){saveTimetable(getTimetable().filter(x=>x.id!==id))}
+function renderTimetable(){let items=getTimetable(),days=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];document.getElementById('timetableList').innerHTML=items.length?items.sort((a,b)=>a.day-b.day||a.start.localeCompare(b.start)).map(x=>`<div class="task"><div><strong>${escapeHtml(x.title)}</strong><div class="task-meta">${days[x.day]} · ${x.start}–${x.end} · ${x.week==='all'?'Toutes les semaines':'Semaine '+x.week}</div></div><button class="secondary" onclick="deleteTimetableEntry('${x.id}')">✕</button></div>`).join(''):'<div class="empty">Aucun cours enregistré pour le moment.</div>'}
+function importTimetableFile(){let file=document.getElementById('ttFile').files[0];if(!file){alert('Sélectionne un fichier .ics.');return}let reader=new FileReader();reader.onload=()=>{try{let lines=String(reader.result).replace(/\r\n[ \t]/g,'').split(/\r?\n/),events=[],event=null;for(let line of lines){if(line==='BEGIN:VEVENT')event={};else if(line==='END:VEVENT'){if(event&&event.start&&event.end&&event.title){let d=new Date(event.start),day=d.getDay(),start=event.start.slice(9,13),end=event.end.slice(9,13);events.push({id:uid(),title:event.title,day,week:'all',start:start.slice(0,2)+':'+start.slice(2),end:end.slice(0,2)+':'+end.slice(2)})}event=null}else if(event){if(line.startsWith('SUMMARY:'))event.title=line.slice(8);if(line.startsWith('DTSTART'))event.start=line.split(':').pop();if(line.startsWith('DTEND'))event.end=line.split(':').pop()}}if(!events.length){alert('Aucun cours compatible détecté. Vérifie que le fichier contient des événements avec des dates et horaires.');return}saveTimetable([...getTimetable(),...events]);alert(events.length+' cours importé(s). Vérifie les jours et horaires affichés.')}catch(e){alert('Impossible de lire ce fichier calendrier.')}};reader.readAsText(file)}
+function addSubject(){let name=prompt('Nom de la nouvelle matière :');if(!name||!name.trim())return;state.subjects.push({id:uid(),name:name.trim(),color:COLORS[state.subjects.length%COLORS.length]});save()}
+function settings(){settingsEdit=true;openModal('Réglages du planning',`<button type="button" class="secondary" style="width:100%;margin-bottom:14px" onclick="openTimetable()">📅 Mon emploi du temps</button><p class="muted small">Ces règles servent de base au générateur. Configure ici tes horaires et importe tes cours.</p><div class="form-grid"><div class="field-wrap"><label class="field">Début possible du travail</label><input id="sStart" type="time" value="${state.settings.dayStart}"></div><div class="field-wrap"><label class="field">Début du dîner</label><input id="sDinner" type="time" value="${state.settings.dinnerStart}"></div><div class="field-wrap"><label class="field">Fin des activités</label><input id="sEnd" type="time" value="${state.settings.endTime}"></div><div class="field-wrap"><label class="field">Objectif sport (minutes/semaine)</label><input id="sSport" type="number" min="0" step="30" value="${state.settings.sportGoal}"></div></div>`)}
+function generate(date){let settings=state.settings, existing=planFor(date).slice(), used=new Set(existing.map(x=>x.taskId));let tasks=state.tasks.filter(t=>!t.done&&!used.has(t.id)).sort((a,b)=>b.priority-a.priority||(a.due||'9999').localeCompare(b.due||'9999'));let start=settings.dayStart||'18:30',end=settings.endTime||'23:00',dinner=settings.dinnerStart||'19:00';let cursor=timeNum(start),endN=timeNum(end),dinnerN=timeNum(dinner);let plan=existing.slice();function timeNum(t){let [h,m]=t.split(':').map(Number);return h*60+m}function fmt(n){return `${String(Math.floor(n/60)).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`}function overlapsDinner(c,d){let ds=dinnerN,de=ds+60;return c<de&&c+d>ds}if(cursor<dinnerN&&cursor+60>dinnerN)cursor=dinnerN+60;else if(cursor>=dinnerN&&cursor<dinnerN+60)cursor=dinnerN+60;
+for(let t of tasks){let dur=Math.max(10,Number(t.duration)||45);if(cursor+dur>endN)continue;if(overlapsDinner(cursor,dur))cursor=dinnerN+60;if(cursor+dur>endN)continue;plan.push({taskId:t.id,start:fmt(cursor),duration:dur});cursor+=dur;let breakLen=cursor<endN?10:0;if(breakLen&&cursor+breakLen<=endN)cursor+=breakLen}
+state.plans[date]=plan.sort((a,b)=>a.start.localeCompare(b.start));save();if(!tasks.length)alert('Il n’y a pas de tâche non planifiée à ajouter pour cette journée. Ajoute des tâches ou choisis un autre jour.');else if(tasks.some(t=>!state.plans[date].some(x=>x.taskId===t.id)))alert('Ton temps disponible ne permet pas de tout placer. Certaines tâches restent dans « Mes tâches ».');}
+function generateWeek(){let selected=document.getElementById('selectedDate').value||today(),monday=plusDays(selected,-((new Date(selected+'T12:00:00').getDay()+6)%7));for(let i=0;i<7;i++)generateDayQuiet(plusDays(monday,i));save();showTab('week')}
+function generateDayQuiet(date){let settings=state.settings,plan=planFor(date).slice(),used=new Set(plan.map(x=>x.taskId));let tasks=state.tasks.filter(t=>!t.done&&!used.has(t.id)).sort((a,b)=>b.priority-a.priority||(a.due||'9999').localeCompare(b.due||'9999'));let start=settings.dayStart||'18:30',end=settings.endTime||'23:00',dinner=settings.dinnerStart||'19:00';let n=t=>{let [h,m]=t.split(':').map(Number);return h*60+m},fmt=x=>`${String(Math.floor(x/60)).padStart(2,'0')}:${String(x%60).padStart(2,'0')}`;let c=n(start),endN=n(end),dn=n(dinner);if(c<dn&&c+60>dn)c=dn+60;else if(c>=dn&&c<dn+60)c=dn+60;for(let t of tasks){let dur=Number(t.duration)||45;if(c<dn+60&&c+dur>dn)c=dn+60;if(c+dur<=endN){plan.push({taskId:t.id,start:fmt(c),duration:dur});c+=dur+10}}state.plans[date]=plan.sort((a,b)=>a.start.localeCompare(b.start))}
+document.getElementById('selectedDate').value=today();document.getElementById('selectedDate').addEventListener('change',render);document.getElementById('prevDay').onclick=()=>{document.getElementById('selectedDate').value=plusDays(document.getElementById('selectedDate').value,-1);render()};document.getElementById('nextDay').onclick=()=>{document.getElementById('selectedDate').value=plusDays(document.getElementById('selectedDate').value,1);render()};document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));document.getElementById('quickTaskForm').addEventListener('submit',quickAdd);document.getElementById('generateBtn').onclick=()=>generate(document.getElementById('selectedDate').value);document.getElementById('weekGenerate').onclick=generateWeek;document.getElementById('addTask').onclick=()=>editTask();document.getElementById('addTaskTop').onclick=()=>editTask();document.getElementById('addSubject').onclick=addSubject;document.getElementById('settingsBtn').onclick=settings;document.getElementById('closeModal').onclick=closeModal;document.getElementById('cancelModal').onclick=closeModal;document.getElementById('saveModal').onclick=saveModal;document.getElementById('taskFilter').onchange=renderTasks;document.getElementById('statusFilter').onchange=renderTasks;document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal()});
+const themeBtn=document.getElementById('themeBtn');function applyTheme(dark){document.body.classList.toggle('dark',dark);themeBtn.textContent=dark?'☀️ Mode clair':'🌙 Mode sombre';document.querySelector('meta[name="theme-color"]').content=dark?'#151722':'#f6f7fb';localStorage.setItem('tempo-dark-mode',dark?'1':'0')}applyTheme(localStorage.getItem('tempo-dark-mode')==='1');themeBtn.onclick=()=>applyTheme(!document.body.classList.contains('dark'));render();
+render();
+</script>
+<footer style="text-align:center;padding:18px;font-size:12px;opacity:0.7">
+  © 2026 Tempo — Tous droits réservés.
+  Le code source, le design et les contenus originaux de ce site
+  ne peuvent être copiés, modifiés ou redistribués sans
+  autorisation écrite préalable du titulaire des droits.
+</footer>
+</body>
+</body>
+</html>
