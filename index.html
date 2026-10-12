@@ -18,11 +18,31 @@ input,select,textarea{width:100%;padding:10px 11px;border:1px solid var(--line);
 @media(max-width:800px){.layout{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.welcome{align-items:start;flex-direction:column}.top{padding:12px 15px}main{padding:0 14px 35px;margin-top:20px}.panel{padding:15px}.subject-list{grid-template-columns:1fr}.schedule-item{grid-template-columns:88px 4px minmax(0,1fr)}}
 @media(max-width:420px){.stats{gap:8px}.stat{padding:12px}.stat strong{font-size:22px}.form-grid{grid-template-columns:1fr}.form-grid .full{grid-column:auto}.actions button{flex:1}.brand{font-size:18px}}
 .schedule-item.done{opacity:.45}.schedule-item.done .schedule-title{text-decoration:line-through}.week-event.done{opacity:.45;text-decoration:line-through}.live-time{display:flex;align-items:center;gap:8px;color:var(--accent);font-size:12px;font-weight:750;padding:7px 0}.live-time:before{content:"";width:10px;height:10px;border-radius:50%;background:var(--accent);flex-shrink:0}.live-line{height:2px;background:var(--accent);flex:1;border-radius:2px}.progress-track{height:5px;background:#ececf5;border-radius:9px;overflow:hidden;margin-top:7px}.progress-fill{height:100%;background:var(--accent);border-radius:9px}
+.workload-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:0 0 20px}
+.workload-card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:var(--shadow);min-width:0}
+.workload-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.workload-head h2{font-size:16px;margin:0}
+.workload-meter{height:9px;background:#ececf5;border-radius:99px;overflow:hidden;margin:10px 0}
+.workload-meter-fill{height:100%;width:0;background:var(--accent);border-radius:99px;transition:width .2s}
+.workload-meter-fill.level-light{background:#26966b}.workload-meter-fill.level-normal{background:#6686d8}.workload-meter-fill.level-high{background:#e5a23d}.workload-meter-fill.level-heavy{background:#d9534f}
+.workload-badge{display:inline-block;border-radius:99px;padding:4px 8px;font-size:11px;font-weight:750;background:var(--accent2);color:var(--accent)}
+.workload-badge.level-light{background:#e3f7ed;color:#18794e}.workload-badge.level-normal{background:#e8edff;color:#4358a8}.workload-badge.level-high{background:#fff0df;color:#9a4c00}.workload-badge.level-heavy{background:#ffebea;color:#b42318}
+.priority-suggestion{padding:9px 0;border-bottom:1px solid var(--line)}
+.priority-suggestion:last-child{border-bottom:0;padding-bottom:0}
+.priority-suggestion strong{display:block;font-size:13px}
+.priority-suggestion small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+@media(max-width:650px){.workload-grid{grid-template-columns:1fr}}
+body.dark .workload-meter{background:#383d50}
+body.dark .workload-badge.level-light{background:#234637;color:#8ce0b6}
+body.dark .workload-badge.level-normal{background:#303b60;color:#bdcaff}
+body.dark .workload-badge.level-high{background:#493725;color:#ffd09b}
+body.dark .workload-badge.level-heavy{background:#492b32;color:#ffaaa5}
+
 body.dark{--bg:#151722;--panel:#202331;--ink:#edf0fa;--muted:#a6acc0;--line:#383d50;--accent:#8588ff;--accent2:#303251;--green:#55c995;--red:#ff817a;--shadow:0 8px 28px rgba(0,0,0,.18)}body.dark input,body.dark select,body.dark textarea,body.dark .task,body.dark .weekday,body.dark .dialog{background:#252939;color:var(--ink);border-color:var(--line)}body.dark button.secondary{background:#303447;color:var(--ink);border-color:var(--line)}body.dark button.danger{background:#492b32;color:#ffaaa5}body.dark .pill{background:#303447;color:#d9def0}body.dark .pill.high{background:#493725;color:#ffd09b}body.dark .notice{background:#292d49;border-color:#3d426d;color:#c6c8ff}body.dark .week-event{background:#303251;color:#d4d5ff}body.dark .progress-track{background:#383d50}body.dark .tab.active{border-color:#484b82}body.dark .dialog{box-shadow:0 20px 70px #0008}
 </style>
 </head>
 <body>
-<header><div class="top"><div class="brand"><div class="logo">T</div><div>Life_OS<small>ton planning, à ton rythme</small></div></div><div style="display:flex;gap:8px"><button class="secondary" id="themeBtn" type="button">🌙 Mode sombre</button><button class="secondary" id="accountBtn" type="button" onclick="openAccount()">👤 Mon compte</button><button class="secondary" id="settingsBtn">⚙ Réglages</button></div></div></header>
+<header><div class="top"><div class="brand"><div class="logo">T</div><div>tempo<small>ton planning, à ton rythme</small></div></div><div style="display:flex;gap:8px"><button class="secondary" id="themeBtn" type="button">🌙 Mode sombre</button><button class="secondary" id="accountBtn" type="button" onclick="openAccount()">👤 Mon compte</button><button class="secondary" id="settingsBtn">⚙ Réglages</button></div></div></header>
 <main>
   <div class="welcome"><div><div class="eyebrow">Espace personnel</div><h1>On organise ta journée.</h1><p class="sub" id="todayLabel"></p></div><div class="actions"><button class="secondary" id="addTaskTop">＋ Ajouter une tâche</button><button id="generateBtn">✦ Générer mon planning</button></div></div>
   <div class="stats">
@@ -30,6 +50,18 @@ body.dark{--bg:#151722;--panel:#202331;--ink:#edf0fa;--muted:#a6acc0;--line:#383
     <div class="stat"><label>Temps planifié</label><strong id="statTime">0 h</strong><span>hors pauses libres</span></div>
     <div class="stat"><label>Objectif sport</label><strong id="statSport">0 / 2 h</strong><span>cette semaine</span></div>
     <div class="stat"><label>À réviser en priorité</label><strong id="statPriority">0</strong><span>tâches urgentes ou importantes</span></div>
+  </div>
+  <div class="workload-grid">
+    <section class="workload-card" aria-live="polite">
+      <div class="workload-head"><h2>📊 Charge de travail</h2><span id="workloadBadge" class="workload-badge">Calcul en cours</span></div>
+      <div><strong id="workloadHours">0 min</strong> <span class="muted small">de travail prévu aujourd’hui</span></div>
+      <div class="workload-meter"><div id="workloadMeterFill" class="workload-meter-fill"></div></div>
+      <p id="workloadComparison" class="muted small" style="margin:0">Comparaison avec ton rythme habituel…</p>
+    </section>
+    <section class="workload-card" aria-live="polite">
+      <div class="workload-head"><h2>🎯 Priorités suggérées</h2></div>
+      <div id="prioritySuggestions"><p class="muted small">Analyse de tes tâches…</p></div>
+    </section>
   </div>
   <nav class="tabs" aria-label="Navigation">
     <button class="tab active" data-tab="today">Aujourd'hui</button><button class="tab" data-tab="week">Semaine</button><button class="tab" data-tab="tasks">Mes tâches</button><button class="tab" data-tab="subjects">Mes matières</button>
@@ -49,11 +81,11 @@ body.dark{--bg:#151722;--panel:#202331;--ink:#edf0fa;--muted:#a6acc0;--line:#383
   <section id="subjects" class="section"><div class="panel"><div class="panel-head"><h2>Mes matières</h2><button id="addSubject">＋ Ajouter une matière</button></div><p class="muted small">Les matières servent à classer tes tâches et à répartir les séances de révision.</p><div id="subjectList" class="subject-list"></div></div></section>
   <div class="footer">Life_OS · Version de départ · Tes données restent dans le stockage local de ton navigateur.</div>
 </main>
-<div class="modal" id="timetableModal" role="dialog" aria-modal="true"><div class="dialog"><div class="dialog-head"><h2>📅 Mon emploi du temps</h2><button class="ghost" type="button" onclick="closeTimetable()">✕</button></div><p class="muted small">Ajoute tes cours fixes pour que Life_OS puisse ensuite organiser tes révisions autour.</p><div class="field-wrap"><label class="field" for="ttTitle">Nom du cours</label><input id="ttTitle" placeholder="Ex. Mathématiques"></div><div class="form-grid"><div class="field-wrap"><label class="field" for="ttDay">Jour</label><select id="ttDay"><option value="1">Lundi</option><option value="2">Mardi</option><option value="3">Mercredi</option><option value="4">Jeudi</option><option value="5">Vendredi</option><option value="6">Samedi</option><option value="0">Dimanche</option></select></div><div class="field-wrap"><label class="field" for="ttWeek">Semaine</label><select id="ttWeek"><option value="all">Toutes</option><option value="A">A</option><option value="B">B</option></select></div><div class="field-wrap"><label class="field" for="ttStart">Début</label><input id="ttStart" type="time" value="08:00"></div><div class="field-wrap"><label class="field" for="ttEnd">Fin</label><input id="ttEnd" type="time" value="10:00"></div></div><button type="button" style="width:100%" onclick="addTimetableEntry()">＋ Ajouter ce cours</button><div style="height:1px;background:var(--line);margin:18px 0"></div><div class="field-wrap"><label class="field" for="ttFile">Importer un fichier calendrier (.ics)</label><input id="ttFile" type="file" accept=".ics,text/calendar"></div><button type="button" class="secondary" style="width:100%;margin-bottom:16px" onclick="importTimetableFile()">Importer le fichier</button><div id="timetableList" class="list"></div></div></div>
+<div class="modal" id="timetableModal" role="dialog" aria-modal="true"><div class="dialog"><div class="dialog-head"><h2>📅 Mon emploi du temps</h2><button class="ghost" type="button" onclick="closeTimetable()">✕</button></div><p class="muted small">Ajoute tes cours fixes pour que Tempo puisse ensuite organiser tes révisions autour.</p><div class="field-wrap"><label class="field" for="ttTitle">Nom du cours</label><input id="ttTitle" placeholder="Ex. Mathématiques"></div><div class="form-grid"><div class="field-wrap"><label class="field" for="ttDay">Jour</label><select id="ttDay"><option value="1">Lundi</option><option value="2">Mardi</option><option value="3">Mercredi</option><option value="4">Jeudi</option><option value="5">Vendredi</option><option value="6">Samedi</option><option value="0">Dimanche</option></select></div><div class="field-wrap"><label class="field" for="ttWeek">Semaine</label><select id="ttWeek"><option value="all">Toutes</option><option value="A">A</option><option value="B">B</option></select></div><div class="field-wrap"><label class="field" for="ttStart">Début</label><input id="ttStart" type="time" value="08:00"></div><div class="field-wrap"><label class="field" for="ttEnd">Fin</label><input id="ttEnd" type="time" value="10:00"></div></div><button type="button" style="width:100%" onclick="addTimetableEntry()">＋ Ajouter ce cours</button><div style="height:1px;background:var(--line);margin:18px 0"></div><div class="field-wrap"><label class="field" for="ttFile">Importer un fichier calendrier (.ics)</label><input id="ttFile" type="file" accept=".ics,text/calendar"></div><button type="button" class="secondary" style="width:100%;margin-bottom:16px" onclick="importTimetableFile()">Importer le fichier</button><div id="timetableList" class="list"></div></div></div>
 <div class="modal" id="accountModal" role="dialog" aria-modal="true">
   <div class="dialog">
     <div class="dialog-head">
-      <h2>Mon compte Life_OS</h2>
+      <h2>Mon compte Tempo</h2>
       <button class="ghost" type="button" onclick="closeAccount()">✕</button>
     </div>
     <p id="accountStatus" class="muted small">Connecte-toi ou crée ton compte.</p>
@@ -93,8 +125,8 @@ const supabaseClient=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 let currentUser=null;
 let cloudReady=false,syncTimer=null;
 function scheduleCloudSave(){if(!currentUser||!cloudReady)return;clearTimeout(syncTimer);syncTimer=setTimeout(()=>syncToCloud(),800)}
-async function syncToCloud(){if(!currentUser||!cloudReady)return;const userId=currentUser.id;const snapshot=JSON.parse(JSON.stringify(state));const {error}=await supabaseClient.from('Life_OS_data').upsert({user_id:userId,data:snapshot,updated_at:new Date().toISOString()},{onConflict:'user_id'});if(error){console.error('Erreur de synchronisation Life_OS :',error);document.getElementById('accountStatus').textContent='Connecté, mais synchronisation impossible : '+error.message;return}document.getElementById('accountStatus').textContent='✅ Connecté et synchronisé : '+currentUser.email}
-async function loadCloudState(user){cloudReady=false;try{const {data,error}=await supabaseClient.from('Life_OS_data').select('data').eq('user_id',user.id).maybeSingle();if(error)throw error;const owner=localStorage.getItem('Life_OS-planning-owner');if(data&&data.data&&Array.isArray(data.data.subjects)&&Array.isArray(data.data.tasks)){localStorage.setItem(KEY+'-backup-before-cloud-'+user.id,localStorage.getItem(KEY)||'null');state=data.data;state.settings={dinnerStart:'19:00',dayStart:'18:30',endTime:'23:00',sportGoal:120,...state.settings};state.plans=state.plans||{};localStorage.setItem(KEY,JSON.stringify(state));localStorage.setItem('Life_OS-planning-owner',user.id);render();cloudReady=true;document.getElementById('accountStatus').textContent='Connecté : '+user.email+' · données synchronisées';return}if(owner&&owner!==user.id){localStorage.setItem(KEY+'-backup-before-cloud-'+owner,localStorage.getItem(KEY)||'null');state={subjects:DEFAULT_SUBJECTS.map(s=>({...s})),tasks:[],settings:{dinnerStart:'19:00',dayStart:'18:30',endTime:'23:00',sportGoal:120},plans:{}};localStorage.setItem(KEY,JSON.stringify(state));render()}const {error:uploadError}=await supabaseClient.from('Life_OS_data').upsert({user_id:user.id,data:state,updated_at:new Date().toISOString()},{onConflict:'user_id'});if(uploadError)throw uploadError;localStorage.setItem('Life_OS-planning-owner',user.id);cloudReady=true;document.getElementById('accountStatus').textContent='Connecté : '+user.email+' · données synchronisées'}catch(error){cloudReady=false;console.error('Erreur de chargement Life_OS :',error);document.getElementById('accountStatus').textContent='Erreur de synchronisation : '+error.message;alert('Life_OS est connecté, mais la synchronisation a échoué : '+error.message)}}
+async function syncToCloud(){if(!currentUser||!cloudReady)return;const userId=currentUser.id;const snapshot=JSON.parse(JSON.stringify(state));const {error}=await supabaseClient.from('tempo_data').upsert({user_id:userId,data:snapshot,updated_at:new Date().toISOString()},{onConflict:'user_id'});if(error){console.error('Erreur de synchronisation Tempo :',error);document.getElementById('accountStatus').textContent='Connecté, mais synchronisation impossible : '+error.message;return}document.getElementById('accountStatus').textContent='✅ Connecté et synchronisé : '+currentUser.email}
+async function loadCloudState(user){cloudReady=false;try{const {data,error}=await supabaseClient.from('tempo_data').select('data').eq('user_id',user.id).maybeSingle();if(error)throw error;const owner=localStorage.getItem('tempo-planning-owner');if(data&&data.data&&Array.isArray(data.data.subjects)&&Array.isArray(data.data.tasks)){localStorage.setItem(KEY+'-backup-before-cloud-'+user.id,localStorage.getItem(KEY)||'null');state=data.data;state.settings={dinnerStart:'19:00',dayStart:'18:30',endTime:'23:00',sportGoal:120,...state.settings};state.plans=state.plans||{};localStorage.setItem(KEY,JSON.stringify(state));localStorage.setItem('tempo-planning-owner',user.id);render();cloudReady=true;document.getElementById('accountStatus').textContent='Connecté : '+user.email+' · données synchronisées';return}if(owner&&owner!==user.id){localStorage.setItem(KEY+'-backup-before-cloud-'+owner,localStorage.getItem(KEY)||'null');state={subjects:DEFAULT_SUBJECTS.map(s=>({...s})),tasks:[],settings:{dinnerStart:'19:00',dayStart:'18:30',endTime:'23:00',sportGoal:120},plans:{}};localStorage.setItem(KEY,JSON.stringify(state));render()}const {error:uploadError}=await supabaseClient.from('tempo_data').upsert({user_id:user.id,data:state,updated_at:new Date().toISOString()},{onConflict:'user_id'});if(uploadError)throw uploadError;localStorage.setItem('tempo-planning-owner',user.id);cloudReady=true;document.getElementById('accountStatus').textContent='Connecté : '+user.email+' · données synchronisées'}catch(error){cloudReady=false;console.error('Erreur de chargement Tempo :',error);document.getElementById('accountStatus').textContent='Erreur de synchronisation : '+error.message;alert('Tempo est connecté, mais la synchronisation a échoué : '+error.message)}}
 async function openAccount(){const {data:{session}}=await supabaseClient.auth.getSession();currentUser=session?.user||null;document.getElementById('accountStatus').textContent=currentUser?(cloudReady?'✅ Connecté et synchronisé : '+currentUser.email:'⏳ Connecté, synchronisation en cours…'):'Connecte-toi ou crée ton compte.';document.getElementById('accountForm').style.display=currentUser?'none':'block';document.getElementById('accountConnected').style.display=currentUser?'block':'none';document.getElementById('accountModal').classList.add('open')}
 function closeAccount(){document.getElementById('accountModal').classList.remove('open')}
 async function signInAccount(){const email=document.getElementById('accountEmail').value.trim();const password=document.getElementById('accountPassword').value;if(!email||!password){alert('Renseigne ton e-mail et ton mot de passe.');return}const {data,error}=await supabaseClient.auth.signInWithPassword({email,password});if(error){alert('Connexion impossible : '+error.message);return}currentUser=data.user;await openAccount();alert('Connexion réussie !')}
@@ -106,7 +138,7 @@ const today=()=>iso(new Date());
 const plusDays=(date,n)=>{let d=new Date(date+'T12:00:00');d.setDate(d.getDate()+n);return iso(d)};
 const uid=()=>Math.random().toString(36).slice(2,10);
 let state=loadState(), editingTask=null, editingSubject=null, settingsEdit=false;
-function loadState(){try{let s=JSON.parse(localStorage.getItem(KEY));if(s&&s.subjects&&s.tasks){s.settings={dinnerStart:'19:00',dayStart:'18:30',endTime:'23:00',sportGoal:120,...s.settings};s.plans=s.plans||{};let now=Date.now(),week=7*24*60*60*1000,expired=new Set();s.tasks=s.tasks.filter(t=>{if(!t.done){delete t.completedAt;return true}if(!t.completedAt){t.completedAt=now;return true}if(now-t.completedAt>=week){expired.add(t.id);return false}return true});for(let d in s.plans)s.plans[d]=s.plans[d].filter(x=>!expired.has(x.taskId));localStorage.setItem(KEY,JSON.stringify(s));return s}}catch(e){}return {subjects:DEFAULT_SUBJECTS,tasks:[],settings:{dinnerStart:'19:00',dayStart:'18:30',endTime:'23:00',sportGoal:120},plans:{}}}
+function loadState(){try{let raw=localStorage.getItem(KEY);if(!raw)raw=localStorage.getItem('tempo-planning-v1');let s=JSON.parse(raw);if(s&&s.subjects&&s.tasks){s.settings={dinnerStart:'19:00',dayStart:'18:30',endTime:'23:00',sportGoal:120,...s.settings};s.plans=s.plans||{};let now=Date.now(),week=7*24*60*60*1000,expired=new Set();s.tasks=s.tasks.filter(t=>{if(!t.done){delete t.completedAt;return true}if(!t.completedAt){t.completedAt=now;return true}if(now-t.completedAt>=week){expired.add(t.id);return false}return true});for(let d in s.plans)s.plans[d]=s.plans[d].filter(x=>!expired.has(x.taskId));localStorage.setItem(KEY,JSON.stringify(s));return s}}catch(e){}return {subjects:DEFAULT_SUBJECTS,tasks:[],settings:{dinnerStart:'19:00',dayStart:'18:30',endTime:'23:00',sportGoal:120},plans:{}}}
 function save(){localStorage.setItem(KEY,JSON.stringify(state));render();scheduleCloudSave()}
 function escapeHtml(s=''){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function subject(id){return state.subjects.find(s=>s.id===id)||{name:'Autre',color:'#888'}}
@@ -115,9 +147,71 @@ function minsLabel(n){return n>=60?`${Math.floor(n/60)} h${n%60?` ${n%60} min`:'
 function showTab(id){document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active',b.dataset.tab===id));document.querySelectorAll('.section').forEach(s=>s.classList.toggle('active',s.id===id));if(id==='week')renderWeek();if(id==='tasks')renderTasks()}
 function planFor(date){return state.plans[date]||[]}
 function taskFor(id){return state.tasks.find(t=>t.id===id)}
-function render(){document.getElementById('todayLabel').textContent=dateLabel(document.getElementById('selectedDate').value||today());fillSubjectSelects();renderSchedule();renderTasks();renderSubjects();renderStats();renderWeek()}
+function render(){document.getElementById('todayLabel').textContent=dateLabel(document.getElementById('selectedDate').value||today());fillSubjectSelects();renderSchedule();renderTasks();renderSubjects();renderStats();renderWorkloadAndPriorities();renderWeek()}
 function fillSubjectSelects(){const opts=state.subjects.map(s=>`<option value="${escapeHtml(s.id)}">${escapeHtml(s.name)}</option>`).join('');['qSubject'].forEach(id=>{let el=document.getElementById(id),v=el.value;el.innerHTML=opts;if(state.subjects.some(s=>s.id===v))el.value=v});let f=document.getElementById('taskFilter'),v=f.value;f.innerHTML='<option value="">Toutes les matières</option>'+opts;if(state.subjects.some(s=>s.id===v))f.value=v}
 function renderStats(){const d=document.getElementById('selectedDate').value||today(),p=planFor(d);const ids=p.map(x=>x.taskId);let active=p.filter(x=>{let t=taskFor(x.taskId);return t&&!t.done});document.getElementById('statTasks').textContent=active.length;document.getElementById('statTime').textContent=minsLabel(active.reduce((a,x)=>a+(x.duration||0),0));let start=plusDays(today(),-((new Date(today()+'T12:00:00').getDay()+6)%7)),end=plusDays(start,6),sport=0;for(let day=start;day<=end;day=plusDays(day,1))for(const x of planFor(day)){let t=taskFor(x.taskId);if(t&&t.subjectId==='sport'&&!t.done)sport+=x.duration||t.duration}document.getElementById('statSport').textContent=`${Math.floor(sport/60)} / ${Math.ceil(state.settings.sportGoal/60)} h`;document.getElementById('statPriority').textContent=state.tasks.filter(t=>!t.done&&t.priority>=2).length}
+
+function renderWorkloadAndPriorities(){
+  const date=document.getElementById('selectedDate').value||today();
+  const plan=planFor(date);
+  const activePlan=plan.filter(x=>{const t=taskFor(x.taskId);return t&&!t.done});
+  const minutes=activePlan.reduce((sum,x)=>sum+(Number(x.duration)||0),0);
+  const hours=minutes/60;
+  const formatHours=m=>{const h=Math.floor(m/60),r=m%60;return h?`${h} h${r?` ${r} min`:''}`:`${r} min`};
+  document.getElementById('workloadHours').textContent=formatHours(minutes);
+  const badge=document.getElementById('workloadBadge');
+  const fill=document.getElementById('workloadMeterFill');
+  let level,label;
+  if(hours<2){level='light';label='Légère'}
+  else if(hours<3.5){level='normal';label='Modérée'}
+  else if(hours<5){level='high';label='Élevée'}
+  else{level='heavy';label='Très élevée'}
+  const pastDays=[];
+  for(let i=21;i>=1;i--){
+    const d=plusDays(date,-i),p=planFor(d);
+    const dayMinutes=p.reduce((sum,x)=>{const t=taskFor(x.taskId);return sum+(t?(Number(x.duration)||Number(t.duration)||0):0)},0);
+    if(dayMinutes>0)pastDays.push(dayMinutes);
+  }
+  const enoughHistory=pastDays.length>=3;
+  let comparison='',meterPercent=Math.min(100,Math.max(8,(hours/5)*100));
+  if(enoughHistory){
+    const average=pastDays.reduce((a,b)=>a+b,0)/pastDays.length;
+    const ratio=average>0?minutes/average:1;
+    if(ratio<0.8){level='light';label='Plus légère que d’habitude'}
+    else if(ratio<=1.2){level='normal';label='Dans tes habitudes'}
+    else if(ratio<=1.5){level='high';label='Plus chargée que d’habitude'}
+    else{level='heavy';label='Très chargée'}
+    meterPercent=Math.min(100,Math.max(8,ratio*60));
+    const percent=Math.round(Math.abs(ratio-1)*100);
+    comparison=minutes===0?'Aucun travail prévu pour cette journée.':ratio<0.8?`${percent} % de travail en moins que ta moyenne des ${pastDays.length} jours actifs précédents (${formatHours(Math.round(average))} par jour).`:ratio<=1.2?`Proche de ta moyenne des ${pastDays.length} jours actifs précédents (${formatHours(Math.round(average))} par jour).`:`${percent} % de travail en plus que ta moyenne des ${pastDays.length} jours actifs précédents (${formatHours(Math.round(average))} par jour).`;
+  }else{
+    comparison=minutes===0?'Ajoute ou planifie des tâches pour mesurer ta charge.':'Pas encore assez d’historique : le niveau repose sur la durée prévue. La comparaison arrivera après 3 jours passés avec du travail planifié.';
+  }
+  badge.className='workload-badge level-'+level;badge.textContent=label;
+  fill.className='workload-meter-fill level-'+level;fill.style.width=meterPercent+'%';
+  document.getElementById('workloadComparison').textContent=comparison;
+  const nowDate=today();
+  const candidates=state.tasks.filter(t=>!t.done).map(t=>{
+    const due=t.due||'';let score=(Number(t.priority)||1)*3;
+    let reason=t.priority===3?'Priorité urgente':t.priority===2?'Priorité importante':'Priorité normale';
+    if(due){
+      const days=Math.round((new Date(due+'T12:00:00')-new Date(nowDate+'T12:00:00'))/86400000);
+      if(days<0){score+=12;reason='Échéance dépassée · '+reason}
+      else if(days===0){score+=10;reason='À rendre aujourd’hui · '+reason}
+      else if(days===1){score+=7;reason='À rendre demain · '+reason}
+      else if(days<=3){score+=4;reason='Échéance dans '+days+' jours · '+reason}
+    }
+    if(plan.some(x=>x.taskId===t.id))score+=1;
+    return {task:t,score,reason};
+  }).sort((a,b)=>b.score-a.score||(a.task.due||'9999').localeCompare(b.task.due||'9999')||(Number(b.task.duration)||45)-(Number(a.task.duration)||45)).slice(0,3);
+  const target=document.getElementById('prioritySuggestions');
+  if(!candidates.length){target.innerHTML='<p class="muted small">Aucune tâche en attente. Tu es à jour !</p>';return}
+  target.innerHTML=candidates.map((item,index)=>{
+    const t=item.task,d=t.due?' · échéance '+new Date(t.due+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'}):'';
+    return `<div class="priority-suggestion"><strong>${index+1}. ${escapeHtml(t.title)}</strong><small>${escapeHtml(item.reason)} · ${minsLabel(Number(t.duration)||45)}${d}</small></div>`;
+  }).join('');
+}
+
 function renderSchedule(){const d=document.getElementById('selectedDate').value||today(),list=document.getElementById('scheduleList');let p=planFor(d).slice().sort((a,b)=>a.start.localeCompare(b.start));if(!p.length){list.innerHTML='<div class="empty">Aucune activité planifiée pour cette journée.<br><br>Clique sur <strong>Générer mon planning</strong> pour organiser tes tâches.</div>';return}list.innerHTML=p.map(x=>{let t=taskFor(x.taskId);if(!t)return '';let s=subject(t.subjectId);return `<div class="schedule-item"><div class="time">${escapeHtml(x.start)} – ${escapeHtml(addMinutes(x.start,x.duration))}<br>${minsLabel(x.duration)}</div><div class="stripe" style="background:${s.color}"></div><div><div class="schedule-title">${escapeHtml(t.title)} ${t.done?'✓':''}</div><div class="schedule-note">${escapeHtml(s.name)} · ${t.priority===3?'Urgent':t.priority===2?'Important':'Normal'}</div><div class="task-actions" style="margin-top:6px"><button class="secondary" onclick="toggleDone('${t.id}')">${t.done?'À refaire':'Terminé'}</button><button class="secondary" onclick="editTask('${t.id}')">Modifier</button><button class="secondary" onclick="removeFromPlan('${d}','${t.id}')">Retirer</button></div></div></div>`}).join('')}
 function addMinutes(time,n){let [h,m]=time.split(':').map(Number);let z=h*60+m+n;return `${String(Math.floor(z/60)).padStart(2,'0')}:${String(z%60).padStart(2,'0')}`}
 function renderTasks(){let all=document.getElementById('allTasks');if(!all)return;let filter=document.getElementById('taskFilter').value,status=document.getElementById('statusFilter').value;let ts=state.tasks.filter(t=>(!filter||t.subjectId===filter)&&(status==='all'||(status==='done'?t.done:!t.done))).sort((a,b)=>b.priority-a.priority||(a.due||'9999').localeCompare(b.due||'9999'));all.innerHTML=ts.length?ts.map(taskCard).join(''):'<div class="empty">Aucune tâche dans cette sélection. Ajoute-en une pour commencer.</div>'}
@@ -152,11 +246,11 @@ state.plans[date]=plan.sort((a,b)=>a.start.localeCompare(b.start));save();if(!ta
 function generateWeek(){let selected=document.getElementById('selectedDate').value||today(),monday=plusDays(selected,-((new Date(selected+'T12:00:00').getDay()+6)%7));for(let i=0;i<7;i++)generateDayQuiet(plusDays(monday,i));save();showTab('week')}
 function generateDayQuiet(date){let settings=state.settings,plan=planFor(date).slice(),used=new Set(plan.map(x=>x.taskId));let tasks=state.tasks.filter(t=>!t.done&&!used.has(t.id)).sort((a,b)=>b.priority-a.priority||(a.due||'9999').localeCompare(b.due||'9999'));let start=settings.dayStart||'18:30',end=settings.endTime||'23:00',dinner=settings.dinnerStart||'19:00';let n=t=>{let [h,m]=t.split(':').map(Number);return h*60+m},fmt=x=>`${String(Math.floor(x/60)).padStart(2,'0')}:${String(x%60).padStart(2,'0')}`;let c=n(start),endN=n(end),dn=n(dinner);if(c<dn&&c+60>dn)c=dn+60;else if(c>=dn&&c<dn+60)c=dn+60;for(let t of tasks){let dur=Number(t.duration)||45;if(c<dn+60&&c+dur>dn)c=dn+60;if(c+dur<=endN){plan.push({taskId:t.id,start:fmt(c),duration:dur});c+=dur+10}}state.plans[date]=plan.sort((a,b)=>a.start.localeCompare(b.start))}
 document.getElementById('selectedDate').value=today();document.getElementById('selectedDate').addEventListener('change',render);document.getElementById('prevDay').onclick=()=>{document.getElementById('selectedDate').value=plusDays(document.getElementById('selectedDate').value,-1);render()};document.getElementById('nextDay').onclick=()=>{document.getElementById('selectedDate').value=plusDays(document.getElementById('selectedDate').value,1);render()};document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));document.getElementById('quickTaskForm').addEventListener('submit',quickAdd);document.getElementById('generateBtn').onclick=()=>generate(document.getElementById('selectedDate').value);document.getElementById('weekGenerate').onclick=generateWeek;document.getElementById('addTask').onclick=()=>editTask();document.getElementById('addTaskTop').onclick=()=>editTask();document.getElementById('addSubject').onclick=addSubject;document.getElementById('settingsBtn').onclick=settings;document.getElementById('closeModal').onclick=closeModal;document.getElementById('cancelModal').onclick=closeModal;document.getElementById('saveModal').onclick=saveModal;document.getElementById('taskFilter').onchange=renderTasks;document.getElementById('statusFilter').onchange=renderTasks;document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal()});
-const themeBtn=document.getElementById('themeBtn');function applyTheme(dark){document.body.classList.toggle('dark',dark);themeBtn.textContent=dark?'☀️ Mode clair':'🌙 Mode sombre';document.querySelector('meta[name="theme-color"]').content=dark?'#151722':'#f6f7fb';localStorage.setItem('Life_OS-dark-mode',dark?'1':'0')}applyTheme(localStorage.getItem('Life_OS-dark-mode')==='1');themeBtn.onclick=()=>applyTheme(!document.body.classList.contains('dark'));render();
+const themeBtn=document.getElementById('themeBtn');function applyTheme(dark){document.body.classList.toggle('dark',dark);themeBtn.textContent=dark?'☀️ Mode clair':'🌙 Mode sombre';document.querySelector('meta[name="theme-color"]').content=dark?'#151722':'#f6f7fb';localStorage.setItem('tempo-dark-mode',dark?'1':'0')}applyTheme(localStorage.getItem('tempo-dark-mode')==='1');themeBtn.onclick=()=>applyTheme(!document.body.classList.contains('dark'));render();
 render();
 </script>
 <footer style="text-align:center;padding:18px;font-size:12px;opacity:0.7">
-  © 2026 Life_OS — Tous droits réservés.
+  © 2026 Tempo — Tous droits réservés.
   Le code source, le design et les contenus originaux de ce site
   ne peuvent être copiés, modifiés ou redistribués sans
   autorisation écrite préalable du titulaire des droits.
