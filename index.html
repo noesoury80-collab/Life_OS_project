@@ -560,6 +560,56 @@ function renderRecap(){const mon=plusDays(mondayOf(selDate()),7*recOff),days=Arr
 recHist();
 })();
 </script>
+<script>
+/* ===== Life_OS — corrections B1 (semaine), B2 (cours pris en compte), B3 (sport terminé compté), B6 (import .ics) ===== */
+(function(){
+const $=id=>document.getElementById(id),tmin=t=>{const [h,m]=String(t||'0:0').split(':').map(Number);return h*60+m},hm=n=>String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0');
+const dowOf=d=>new Date(d+'T12:00:00').getDay(),mondayOf=d=>plusDays(d,-((dowOf(d)+6)%7)),selDate=()=>$('selectedDate').value||today();
+const byPrio=(a,b)=>b.priority-a.priority||(a.due||'9999').localeCompare(b.due||'9999');
+
+/* B2 : placement qui évite les cours, le dîner et tout ce qui est déjà planifié, et qui n'écrase rien. */
+function busyOf(date){const s=state.settings,ds=tmin(s.dinnerStart||'19:00'),dow=dowOf(date),b=[{s:ds,e:ds+60}];
+ getTimetable().forEach(x=>{if(Number(x.day)===dow)b.push({s:tmin(x.start),e:tmin(x.end)})});
+ planFor(date).forEach(x=>{const t=taskFor(x.taskId);if(t)b.push({s:tmin(x.start),e:tmin(x.start)+(Number(x.duration)||t.duration||45)})});return b}
+function fill(date,tasks){const s=state.settings,ws=tmin(s.dayStart||'18:30'),we=tmin(s.endTime||'23:00'),busy=busyOf(date),placed=[];
+ for(const t of tasks){const dur=Math.max(10,Number(t.duration)||45);let at=null;for(let m=ws;m+dur<=we;m+=5)if(!busy.some(b=>m<b.e&&m+dur>b.s)){at=m;break}
+  if(at==null)continue;busy.push({s:at,e:at+dur+10});placed.push(t);state.plans[date]=[...planFor(date),{taskId:t.id,start:hm(at),duration:dur}]}
+ state.plans[date]=planFor(date).slice().sort((a,b)=>a.start.localeCompare(b.start));return placed}
+window.generate=function(date){const used=new Set(planFor(date).map(x=>x.taskId)),tasks=state.tasks.filter(t=>!t.done&&!used.has(t.id)).sort(byPrio),placed=fill(date,tasks);save();
+ if(!tasks.length)alert('Il n’y a pas de tâche non planifiée à ajouter pour cette journée. Ajoute des tâches ou choisis un autre jour.');else if(placed.length<tasks.length)alert('Ton temps disponible ne permet pas de tout placer. Certaines tâches restent dans « Mes tâches ».')};
+window.generateDayQuiet=function(date){const used=new Set(planFor(date).map(x=>x.taskId));fill(date,state.tasks.filter(t=>!t.done&&!used.has(t.id)).sort(byPrio))};
+
+/* B1 : chaque tâche n'est placée qu'une fois dans la semaine, jamais dans le passé, et pas après son échéance (sauf si c'est impossible). */
+window.generateWeek=function(){const mon=mondayOf(selDate()),t0=today(),already=new Set();
+ for(const d in state.plans)if(d>=t0)state.plans[d].forEach(x=>{const t=taskFor(x.taskId);if(t&&!t.done)already.add(x.taskId)});
+ let left=state.tasks.filter(t=>!t.done&&!already.has(t.id)).sort(byPrio),first=null;
+ for(let i=0;i<7;i++){const d=plusDays(mon,i);if(d<t0)continue;if(!first)first=d;const ok=left.filter(t=>!t.due||d<=t.due||d===first),ids=new Set(fill(d,ok).map(t=>t.id));left=left.filter(t=>!ids.has(t.id))}
+ save();showTab('week')};
+$('weekGenerate').onclick=window.generateWeek;
+
+/* B3 : l'objectif sport compte aussi les séances terminées (y compris celles déjà purgées, via l'historique). */
+function sportStat(){const mon=mondayOf(today()),end=plusDays(mon,6),ids=new Set();let m=0;
+ for(let i=0;i<7;i++)planFor(plusDays(mon,i)).forEach(x=>{const t=taskFor(x.taskId);if(t&&t.subjectId==='sport'){m+=Number(x.duration)||t.duration||0;ids.add(t.id)}});
+ (state.history||[]).forEach(h=>{if(h.subjectId==='sport'&&!ids.has(h.id)&&h.date>=mon&&h.date<=end){m+=Number(h.duration)||0;ids.add(h.id)}});
+ $('statSport').textContent=Math.floor(m/60)+' / '+Math.ceil(state.settings.sportGoal/60)+' h'}
+const _r=window.render;window.render=function(){_r();sportStat()};
+
+/* B6 : import .ics robuste (heures UTC converties, formats TZID, journées entières ignorées, doublons évités). */
+window.importTimetableFile=function(){const file=$('ttFile').files[0];if(!file){alert('Sélectionne un fichier .ics.');return}
+ const r=new FileReader();r.onload=()=>{try{
+  const val=l=>l.slice(l.indexOf(':')+1).trim(),key=l=>l.slice(0,l.indexOf(':')).split(';')[0].toUpperCase();
+  const pd=v=>{const m=v.match(/^(\d{4})(\d{2})(\d{2})(?:T(\d{2})(\d{2})(\d{2})?(Z)?)?$/);if(!m)return null;if(m[4]==null)return {allday:true};
+   const d=m[7]?new Date(Date.UTC(+m[1],m[2]-1,+m[3],+m[4],+m[5])):new Date(+m[1],m[2]-1,+m[3],+m[4],+m[5]);return {day:d.getDay(),ymd:iso(d),time:hm(d.getHours()*60+d.getMinutes())}};
+  const have=new Set(getTimetable().map(x=>[x.title,x.day,x.start,x.end].join('|'))),fresh=[];let ev=null,allday=0,dup=0,bad=0;
+  String(r.result).replace(/\r?\n[ \t]/g,'').split(/\r?\n/).forEach(l=>{if(l==='BEGIN:VEVENT'){ev={};return}
+   if(l==='END:VEVENT'){if(ev){if(ev.a&&ev.a.allday)allday++;else if(ev.title&&ev.a&&ev.b&&ev.a.ymd===ev.b.ymd&&ev.a.time<ev.b.time){const k=[ev.title,ev.a.day,ev.a.time,ev.b.time].join('|');if(have.has(k))dup++;else{have.add(k);fresh.push({id:uid(),title:ev.title.slice(0,120),day:ev.a.day,week:'all',start:ev.a.time,end:ev.b.time})}}else bad++}ev=null;return}
+   if(!ev)return;const k=key(l);if(k==='SUMMARY')ev.title=val(l).replace(/\\([,;nN\\])/g,(m,c)=>/n/i.test(c)?' ':c).trim();else if(k==='DTSTART')ev.a=pd(val(l));else if(k==='DTEND')ev.b=pd(val(l))});
+  if(!fresh.length){alert('Aucun nouveau cours importé.'+(dup?' '+dup+' déjà présent(s).':'')+(allday?' '+allday+' événement(s) sur la journée entière ignoré(s).':'')+(bad?' '+bad+' événement(s) illisible(s) ou à cheval sur deux jours ignoré(s).':''));return}
+  saveTimetable([...getTimetable(),...fresh]);alert(fresh.length+' cours importé(s).'+(dup?' '+dup+' doublon(s) ignoré(s).':'')+(allday?' '+allday+' journée(s) entière(s) ignorée(s).':'')+(bad?' '+bad+' événement(s) ignoré(s).':'')+' Les événements répétés sont enregistrés une seule fois, chaque semaine. Vérifie les jours et horaires affichés.')
+ }catch(e){alert('Impossible de lire ce fichier calendrier.')}};r.readAsText(file)};
+window.render();
+})();
+</script>
 <footer style="text-align:center;padding:18px;font-size:12px;opacity:0.7">
   © 2026 Tempo — Tous droits réservés.
   Le code source, le design et les contenus originaux de ce site
