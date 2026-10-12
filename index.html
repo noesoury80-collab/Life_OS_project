@@ -67,6 +67,16 @@ body.dark{--bg:#151722;--panel:#202331;--ink:#edf0fa;--muted:#a6acc0;--line:#383
     <button class="tab active" data-tab="today">Aujourd'hui</button><button class="tab" data-tab="week">Semaine</button><button class="tab" data-tab="tasks">Mes tâches</button><button class="tab" data-tab="subjects">Mes matières</button>
   </nav>
   <section id="today" class="section active">
+    <div class="panel" style="margin-bottom:16px">
+      <div class="panel-head"><h2>🏃 Calculateur de créneau sport</h2><span class="small muted">Selon tes cours et ton travail</span></div>
+      <p class="muted small" style="margin-top:0">Choisis la durée : Life_OS cherche un créneau libre qui évite tes cours, les tâches déjà planifiées et le dîner. Si ton emploi du temps n’est pas renseigné, le calcul se base sur ton planning actuel et tes horaires de réglage.</p>
+      <div class="form-grid">
+        <div class="field-wrap"><label class="field" for="sportDuration">Durée de la séance</label><select id="sportDuration"><option value="30">30 minutes</option><option value="45">45 minutes</option><option value="60" selected>1 heure</option><option value="75">1 h 15</option><option value="90">1 h 30</option><option value="120">2 heures</option></select></div>
+        <div class="field-wrap"><label class="field" for="sportKind">Type de séance</label><select id="sportKind"><option value="Sport">Sport général</option><option value="Course à pied">Course à pied</option><option value="Musculation">Musculation</option><option value="Handball">Handball</option><option value="Mobilité / récupération">Mobilité / récupération</option></select></div>
+      </div>
+      <button type="button" id="calculateSportBtn" style="width:100%">Trouver le meilleur créneau</button>
+      <div id="sportRecommendation" aria-live="polite" style="margin-top:12px"><p class="muted small">Le créneau conseillé apparaîtra ici pour la date sélectionnée.</p></div>
+    </div>
     <div class="layout">
       <div class="panel"><div class="panel-head"><h2>Programme du jour</h2><div class="day-controls"><button class="secondary" id="prevDay" aria-label="Jour précédent">‹</button><input type="date" id="selectedDate"><button class="secondary" id="nextDay" aria-label="Jour suivant">›</button></div></div><div id="scheduleList" class="list"></div><p class="small muted">Tu peux modifier une tâche depuis « Mes tâches ». La génération respecte les horaires bloqués et l'arrêt à 23 h.</p></div>
       <div class="panel"><div class="panel-head"><h2>Ajouter rapidement</h2></div><form id="quickTaskForm">
@@ -212,6 +222,68 @@ function renderWorkloadAndPriorities(){
   }).join('');
 }
 
+let suggestedSportSlot=null;
+function calculateSportSlot(){
+  const date=document.getElementById('selectedDate').value||today();
+  const duration=Math.max(15,Number(document.getElementById('sportDuration').value)||60);
+  const kind=document.getElementById('sportKind').value||'Sport';
+  const out=document.getElementById('sportRecommendation');
+  const toMin=t=>{const [h,m]=String(t||'00:00').split(':').map(Number);return h*60+m};
+  const fmt=n=>`${String(Math.floor(n/60)).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`;
+  const dayOfWeek=new Date(date+'T12:00:00').getDay();
+  const week=getTimetable().filter(x=>Number(x.day)===dayOfWeek);
+  const fixed=week.map(x=>({start:toMin(x.start),end:toMin(x.end),label:x.title,kind:'cours'}));
+  const planned=planFor(date).map(x=>{const t=taskFor(x.taskId);return t?{start:toMin(x.start),end:toMin(x.start)+Number(x.duration||t.duration||45),label:t.title,kind:t.subjectId==='sport'?'sport':'travail',priority:Number(t.priority)||1}:null}).filter(Boolean);
+  const existingSport=planned.find(x=>x.kind==='sport');
+  if(existingSport){suggestedSportSlot={date,start:existingSport.start,duration:existingSport.end-existingSport.start,kind,existingTask:true};out.innerHTML=`<div class="notice">Une séance de sport est déjà planifiée de <strong>${fmt(existingSport.start)} à ${fmt(existingSport.end)}</strong>. Tu peux la garder ou retirer cette séance du planning avant d’en chercher une autre.</div>`;return}
+  const dinnerStart=toMin(state.settings.dinnerStart||'19:00'),dinnerEnd=dinnerStart+60;
+  let startLimit=Math.max(12*60, toMin(state.settings.dayStart||'18:30')-180);
+  const endLimit=toMin(state.settings.endTime||'23:00');
+  if(date===today()){const now=new Date(),nowMinutes=now.getHours()*60+now.getMinutes();startLimit=Math.max(startLimit,Math.ceil(nowMinutes/15)*15);}
+  const blocks=[...fixed,...planned,{start:dinnerStart,end:dinnerEnd,label:'Dîner',kind:'dîner'}];
+  const candidates=[];
+  for(let start=startLimit;start+duration<=endLimit;start+=15){
+    const end=start+duration;
+    if(blocks.some(b=>start<b.end&&end>b.start))continue;
+    const beforeDinner=end<=dinnerStart;
+    const late=end>21*60;
+    const afterClass=fixed.length&&start>=Math.max(...fixed.map(x=>x.end));
+    const urgentToday=planned.some(x=>x.kind==='travail'&&x.priority>=3);
+    let score=0;
+    if(beforeDinner)score+=40;
+    if(afterClass)score+=25;
+    if(start>=16*60&&start<19*60)score+=25;
+    if(start>=19*60)score-=10;
+    if(late)score-=35;
+    if(urgentToday&&start<Math.min(...planned.filter(x=>x.kind==='travail'&&x.priority>=3).map(x=>x.start)))score-=20;
+    // Prefer a reasonable early slot, while keeping all existing activities untouched.
+    score-=Math.max(0,start-16*60)*0.04;
+    candidates.push({start,end,score});
+  }
+  candidates.sort((a,b)=>b.score-a.score||a.start-b.start);
+  if(!candidates.length){suggestedSportSlot=null;out.innerHTML=`<div class="notice">Aucun créneau de ${duration} min trouvé entre ${fmt(startLimit)} et ${fmt(endLimit)} sans chevaucher les cours, le travail déjà planifié et le dîner. Essaie une séance plus courte ou libère un créneau.</div>`;return}
+  const best=candidates[0];suggestedSportSlot={date,start:best.start,duration,kind,existingTask:false};
+  const workload=planned.filter(x=>x.kind==='travail').reduce((sum,x)=>sum+x.end-x.start,0);
+  let reason= fixed.length ? 'Le calcul tient compte des cours enregistrés pour ce jour' : 'Aucun cours fixe n’est enregistré pour ce jour';
+  reason+=`, de ${minsLabel(workload)} de travail déjà planifié et de ta pause dîner`;
+  if(planned.some(x=>x.kind==='travail'&&x.priority>=3))reason+='. Une tâche urgente est prévue : garde-la bien en tête et évite de décaler son échéance';
+  out.innerHTML=`<div class="workload-card" style="box-shadow:none;padding:14px"><div class="workload-head"><h2>Créneau conseillé</h2><span class="workload-badge level-light">Libre</span></div><div style="font-size:24px;font-weight:800">${fmt(best.start)} – ${fmt(best.end)}</div><p class="muted small">${escapeHtml(kind)} · ${minsLabel(duration)}</p><p class="muted small">${escapeHtml(reason)}.</p><button type="button" id="addSuggestedSportBtn" style="width:100%">Ajouter cette séance au planning</button></div>`;
+  document.getElementById('addSuggestedSportBtn').onclick=addSuggestedSport;
+}
+function addSuggestedSport(){
+  if(!suggestedSportSlot||suggestedSportSlot.existingTask){alert('Calcule d’abord un nouveau créneau libre.');return}
+  const slot=suggestedSportSlot;
+  if(planFor(slot.date).some(x=>{const t=taskFor(x.taskId);return t&&t.subjectId==='sport'})){alert('Une séance de sport est déjà dans le planning de cette journée.');return}
+  let sportSubject=state.subjects.find(x=>x.id==='sport')||state.subjects.find(x=>/sport/i.test(x.name));
+  if(!sportSubject){sportSubject={id:'sport',name:'Sport',color:COLORS[7]};state.subjects.push(sportSubject)}
+  const id=uid();
+  state.tasks.push({id,title:slot.kind,subjectId:sportSubject.id,duration:slot.duration,priority:1,due:slot.date,notes:'Séance placée par le calculateur de créneau sport.',done:false});
+  state.plans[slot.date]=[...planFor(slot.date),{taskId:id,start:fmtSportTime(slot.start),duration:slot.duration}].sort((a,b)=>a.start.localeCompare(b.start));
+  save();
+  document.getElementById('sportRecommendation').innerHTML='<div class="notice">Séance ajoutée au planning. Tu peux la retrouver et la modifier dans le programme du jour.</div>';
+  suggestedSportSlot=null;
+}
+function fmtSportTime(n){return `${String(Math.floor(n/60)).padStart(2,'0')}:${String(n%60).padStart(2,'0')}`}
 function renderSchedule(){const d=document.getElementById('selectedDate').value||today(),list=document.getElementById('scheduleList');let p=planFor(d).slice().sort((a,b)=>a.start.localeCompare(b.start));if(!p.length){list.innerHTML='<div class="empty">Aucune activité planifiée pour cette journée.<br><br>Clique sur <strong>Générer mon planning</strong> pour organiser tes tâches.</div>';return}list.innerHTML=p.map(x=>{let t=taskFor(x.taskId);if(!t)return '';let s=subject(t.subjectId);return `<div class="schedule-item"><div class="time">${escapeHtml(x.start)} – ${escapeHtml(addMinutes(x.start,x.duration))}<br>${minsLabel(x.duration)}</div><div class="stripe" style="background:${s.color}"></div><div><div class="schedule-title">${escapeHtml(t.title)} ${t.done?'✓':''}</div><div class="schedule-note">${escapeHtml(s.name)} · ${t.priority===3?'Urgent':t.priority===2?'Important':'Normal'}</div><div class="task-actions" style="margin-top:6px"><button class="secondary" onclick="toggleDone('${t.id}')">${t.done?'À refaire':'Terminé'}</button><button class="secondary" onclick="editTask('${t.id}')">Modifier</button><button class="secondary" onclick="removeFromPlan('${d}','${t.id}')">Retirer</button></div></div></div>`}).join('')}
 function addMinutes(time,n){let [h,m]=time.split(':').map(Number);let z=h*60+m+n;return `${String(Math.floor(z/60)).padStart(2,'0')}:${String(z%60).padStart(2,'0')}`}
 function renderTasks(){let all=document.getElementById('allTasks');if(!all)return;let filter=document.getElementById('taskFilter').value,status=document.getElementById('statusFilter').value;let ts=state.tasks.filter(t=>(!filter||t.subjectId===filter)&&(status==='all'||(status==='done'?t.done:!t.done))).sort((a,b)=>b.priority-a.priority||(a.due||'9999').localeCompare(b.due||'9999'));all.innerHTML=ts.length?ts.map(taskCard).join(''):'<div class="empty">Aucune tâche dans cette sélection. Ajoute-en une pour commencer.</div>'}
@@ -232,7 +304,7 @@ function saveModal(){if(settingsEdit){state.settings.dayStart=document.getElemen
 function editSubject(id){editingSubject=id;let s=state.subjects.find(x=>x.id===id);openModal('Modifier la matière',`<div class="field-wrap"><label class="field">Nom de la matière</label><input id="mSubName" value="${escapeHtml(s.name)}"></div><p class="small muted">La suppression de matière sera ajoutée dans une prochaine version.</p>`)}
 function openTimetable(){document.getElementById('timetableModal').classList.add('open');renderTimetable()}
 function closeTimetable(){document.getElementById('timetableModal').classList.remove('open')}
-function getTimetable(){return JSON.parse(localStorage.getItem(KEY+'-timetable')||'[]')}
+function getTimetable(){return JSON.parse(localStorage.getItem(KEY+'-timetable')||localStorage.getItem('tempo-planning-v1-timetable')||'[]')}
 function saveTimetable(items){localStorage.setItem(KEY+'-timetable',JSON.stringify(items));renderTimetable()}
 function addTimetableEntry(){let title=document.getElementById('ttTitle').value.trim(),day=Number(document.getElementById('ttDay').value),week=document.getElementById('ttWeek').value,start=document.getElementById('ttStart').value,end=document.getElementById('ttEnd').value;if(!title||!start||!end||start>=end){alert('Vérifie le nom du cours et les horaires.');return}let items=getTimetable();items.push({id:uid(),title,day,week,start,end});saveTimetable(items);document.getElementById('ttTitle').value=''}
 function deleteTimetableEntry(id){saveTimetable(getTimetable().filter(x=>x.id!==id))}
@@ -245,7 +317,7 @@ for(let t of tasks){let dur=Math.max(10,Number(t.duration)||45);if(cursor+dur>en
 state.plans[date]=plan.sort((a,b)=>a.start.localeCompare(b.start));save();if(!tasks.length)alert('Il n’y a pas de tâche non planifiée à ajouter pour cette journée. Ajoute des tâches ou choisis un autre jour.');else if(tasks.some(t=>!state.plans[date].some(x=>x.taskId===t.id)))alert('Ton temps disponible ne permet pas de tout placer. Certaines tâches restent dans « Mes tâches ».');}
 function generateWeek(){let selected=document.getElementById('selectedDate').value||today(),monday=plusDays(selected,-((new Date(selected+'T12:00:00').getDay()+6)%7));for(let i=0;i<7;i++)generateDayQuiet(plusDays(monday,i));save();showTab('week')}
 function generateDayQuiet(date){let settings=state.settings,plan=planFor(date).slice(),used=new Set(plan.map(x=>x.taskId));let tasks=state.tasks.filter(t=>!t.done&&!used.has(t.id)).sort((a,b)=>b.priority-a.priority||(a.due||'9999').localeCompare(b.due||'9999'));let start=settings.dayStart||'18:30',end=settings.endTime||'23:00',dinner=settings.dinnerStart||'19:00';let n=t=>{let [h,m]=t.split(':').map(Number);return h*60+m},fmt=x=>`${String(Math.floor(x/60)).padStart(2,'0')}:${String(x%60).padStart(2,'0')}`;let c=n(start),endN=n(end),dn=n(dinner);if(c<dn&&c+60>dn)c=dn+60;else if(c>=dn&&c<dn+60)c=dn+60;for(let t of tasks){let dur=Number(t.duration)||45;if(c<dn+60&&c+dur>dn)c=dn+60;if(c+dur<=endN){plan.push({taskId:t.id,start:fmt(c),duration:dur});c+=dur+10}}state.plans[date]=plan.sort((a,b)=>a.start.localeCompare(b.start))}
-document.getElementById('selectedDate').value=today();document.getElementById('selectedDate').addEventListener('change',render);document.getElementById('prevDay').onclick=()=>{document.getElementById('selectedDate').value=plusDays(document.getElementById('selectedDate').value,-1);render()};document.getElementById('nextDay').onclick=()=>{document.getElementById('selectedDate').value=plusDays(document.getElementById('selectedDate').value,1);render()};document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));document.getElementById('quickTaskForm').addEventListener('submit',quickAdd);document.getElementById('generateBtn').onclick=()=>generate(document.getElementById('selectedDate').value);document.getElementById('weekGenerate').onclick=generateWeek;document.getElementById('addTask').onclick=()=>editTask();document.getElementById('addTaskTop').onclick=()=>editTask();document.getElementById('addSubject').onclick=addSubject;document.getElementById('settingsBtn').onclick=settings;document.getElementById('closeModal').onclick=closeModal;document.getElementById('cancelModal').onclick=closeModal;document.getElementById('saveModal').onclick=saveModal;document.getElementById('taskFilter').onchange=renderTasks;document.getElementById('statusFilter').onchange=renderTasks;document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal()});
+document.getElementById('selectedDate').value=today();document.getElementById('calculateSportBtn').addEventListener('click',calculateSportSlot);document.getElementById('selectedDate').addEventListener('change',()=>{suggestedSportSlot=null;render();document.getElementById('sportRecommendation').innerHTML='<p class="muted small">Clique sur « Trouver le meilleur créneau » pour cette date.</p>'});document.getElementById('prevDay').onclick=()=>{document.getElementById('selectedDate').value=plusDays(document.getElementById('selectedDate').value,-1);render()};document.getElementById('nextDay').onclick=()=>{document.getElementById('selectedDate').value=plusDays(document.getElementById('selectedDate').value,1);render()};document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));document.getElementById('quickTaskForm').addEventListener('submit',quickAdd);document.getElementById('generateBtn').onclick=()=>generate(document.getElementById('selectedDate').value);document.getElementById('weekGenerate').onclick=generateWeek;document.getElementById('addTask').onclick=()=>editTask();document.getElementById('addTaskTop').onclick=()=>editTask();document.getElementById('addSubject').onclick=addSubject;document.getElementById('settingsBtn').onclick=settings;document.getElementById('closeModal').onclick=closeModal;document.getElementById('cancelModal').onclick=closeModal;document.getElementById('saveModal').onclick=saveModal;document.getElementById('taskFilter').onchange=renderTasks;document.getElementById('statusFilter').onchange=renderTasks;document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal()});
 const themeBtn=document.getElementById('themeBtn');function applyTheme(dark){document.body.classList.toggle('dark',dark);themeBtn.textContent=dark?'☀️ Mode clair':'🌙 Mode sombre';document.querySelector('meta[name="theme-color"]').content=dark?'#151722':'#f6f7fb';localStorage.setItem('tempo-dark-mode',dark?'1':'0')}applyTheme(localStorage.getItem('tempo-dark-mode')==='1');themeBtn.onclick=()=>applyTheme(!document.body.classList.contains('dark'));render();
 render();
 </script>
