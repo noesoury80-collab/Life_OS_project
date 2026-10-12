@@ -330,7 +330,7 @@ render();
    quelques fonctions (save, loadCloudState, scheduleCloudSave, syncToCloud, saveTimetable,
    toggleDone, openModal, saveModal, render) en conservant leur comportement et en l'étendant. */
 (function(){
-const TT_KEY=KEY+'-timetable',DAY=864e5,DEF_SET={dinnerStart:'19:00',dayStart:'18:30',endTime:'23:00',sportGoal:120};
+const TT_KEY=KEY+'-timetable',DAY=864e5,DEF_SET={dinnerStart:'19:00',dayStart:'18:30',endTime:'23:00',sportGoal:120,freeMin:60};
 const rid=v=>typeof v==='string'&&/^[A-Za-z0-9_-]{1,40}$/.test(v)?v:null;
 const rstr=(v,n)=>String(v==null?'':v).slice(0,n);
 const rtm=(v,d)=>typeof v==='string'&&/^([01]\d|2[0-3]):[0-5]\d$/.test(v)?v:d;
@@ -342,11 +342,13 @@ const readTT=()=>{try{const t=JSON.parse(localStorage.getItem(TT_KEY)||localStor
 /* Validation + nettoyage (données cloud, import, local) : rejette la structure invalide, filtre les champs dangereux. */
 function sanitize(s){
  if(!s||typeof s!=='object'||!Array.isArray(s.subjects)||!Array.isArray(s.tasks))throw new Error('structure invalide (matières ou tâches manquantes).');
- let dropped=0;const o={subjects:[],tasks:[],settings:{},plans:{},timetable:[],meta:{stamps:{},del:{},hash:{}}};const seen=new Set();
+ let dropped=0;const o={subjects:[],tasks:[],settings:{},plans:{},timetable:[],habits:[],history:[],meta:{stamps:{},del:{},hash:{}}};const seen=new Set();
  s.subjects.forEach(x=>{const id=x&&rid(x.id),name=x&&rstr(x.name,80).trim();if(!id||!name||seen.has(id)){dropped++;return}seen.add(id);o.subjects.push({id,name,color:rcol(x.color)})});
  const first=o.subjects[0]?o.subjects[0].id:'';seen.clear();
- s.tasks.forEach(x=>{const id=x&&rid(x.id),title=x&&rstr(x.title,200).trim();if(!id||!title||seen.has(id)){dropped++;return}seen.add(id);const t={id,title,subjectId:rid(x.subjectId)||first,duration:rnum(x.duration,10,1440,45),priority:Math.round(rnum(x.priority,1,3,1)),due:rdt(x.due),notes:rstr(x.notes,1000),done:!!x.done};if(t.done&&Number(x.completedAt)>0)t.completedAt=Number(x.completedAt);o.tasks.push(t)});
- const st=s.settings||{};o.settings={dinnerStart:rtm(st.dinnerStart,DEF_SET.dinnerStart),dayStart:rtm(st.dayStart,DEF_SET.dayStart),endTime:rtm(st.endTime,DEF_SET.endTime),sportGoal:rnum(st.sportGoal,0,2000,120)};
+ s.tasks.forEach(x=>{const id=x&&rid(x.id),title=x&&rstr(x.title,200).trim();if(!id||!title||seen.has(id)){dropped++;return}seen.add(id);const t={id,title,subjectId:rid(x.subjectId)||first,duration:rnum(x.duration,10,1440,45),priority:Math.round(rnum(x.priority,1,3,1)),due:rdt(x.due),notes:rstr(x.notes,1000),done:!!x.done};if(t.done&&Number(x.completedAt)>0)t.completedAt=Number(x.completedAt);if(rid(x.habitId))t.habitId=x.habitId;o.tasks.push(t)});
+ (Array.isArray(s.habits)?s.habits:[]).forEach(x=>{const id=x&&rid(x.id),name=x&&rstr(x.name,80).trim();if(!id||!name){dropped++;return}o.habits.push({id,name,duration:rnum(x.duration,10,600,30),days:[...new Set((Array.isArray(x.days)?x.days:[]).map(Number).filter(d=>Number.isInteger(d)&&d>=0&&d<=6))].sort(),subjectId:rid(x.subjectId)||first})});
+ (Array.isArray(s.history)?s.history:[]).slice(-2000).forEach(x=>{const id=x&&rid(x.id);if(!id||!rdt(x.date))return;const e={id,title:rstr(x.title,200),subjectId:rid(x.subjectId)||first,duration:rnum(x.duration,0,1440,0),date:x.date};if(rid(x.habitId))e.habitId=x.habitId;o.history.push(e)});
+ const st=s.settings||{};o.settings={dinnerStart:rtm(st.dinnerStart,DEF_SET.dinnerStart),dayStart:rtm(st.dayStart,DEF_SET.dayStart),endTime:rtm(st.endTime,DEF_SET.endTime),sportGoal:rnum(st.sportGoal,0,2000,120),freeMin:rnum(st.freeMin,0,600,60)};
  const pl=s.plans&&typeof s.plans==='object'?s.plans:{};
  for(const d in pl){if(!rdt(d)||!Array.isArray(pl[d]))continue;o.plans[d]=pl[d].map(x=>x&&rid(x.taskId)&&rtm(x.start,null)?{taskId:x.taskId,start:x.start,duration:rnum(x.duration,5,1440,45)}:null).filter(Boolean)}
  (Array.isArray(s.timetable)?s.timetable:[]).forEach(x=>{const id=x&&rid(x.id),title=x&&rstr(x.title,120).trim(),a=x&&rtm(x.start,null),b=x&&rtm(x.end,null);if(!id||!title||!a||!b||a>=b){dropped++;return}o.timetable.push({id,title,day:Math.round(rnum(x.day,0,6,1)),week:['all','A','B'].includes(x.week)?x.week:'all',start:a,end:b})});
@@ -355,7 +357,7 @@ function sanitize(s){
  return {s:o,dropped};
 }
 /* Éléments synchronisables, indexés par clé : t:tâche s:matière p:jour c:cours cfg:réglages */
-function itemsOf(S){const m={};S.tasks.forEach(t=>m['t:'+t.id]=t);S.subjects.forEach(x=>m['s:'+x.id]=x);for(const d in S.plans)m['p:'+d]=S.plans[d];m.cfg=S.settings;(S.timetable||[]).forEach(x=>m['c:'+x.id]=x);return m}
+function itemsOf(S){const m={};S.tasks.forEach(t=>m['t:'+t.id]=t);S.subjects.forEach(x=>m['s:'+x.id]=x);for(const d in S.plans)m['p:'+d]=S.plans[d];m.cfg=S.settings;(S.habits||[]).forEach(x=>m['h:'+x.id]=x);(S.history||[]).forEach(x=>m['y:'+x.id]=x);(S.timetable||[]).forEach(x=>m['c:'+x.id]=x);return m}
 /* Horodate chaque élément modifié ; note les suppressions (tombstones) pour qu'elles se propagent. */
 function stamp(){const m=state.meta=state.meta&&typeof state.meta==='object'?state.meta:{};const fresh=!m.hash;m.stamps=m.stamps||{};m.del=m.del||{};m.hash=m.hash||{};const now=Date.now(),cur=itemsOf(state);
  for(const k in cur){const j=JSON.stringify(cur[k]);if(m.hash[k]!==j){m.hash[k]=j;m.stamps[k]=fresh?(m.stamps[k]||0):now;delete m.del[k]}}
@@ -364,11 +366,11 @@ function stamp(){const m=state.meta=state.meta&&typeof state.meta==='object'?sta
 /* Fusion élément par élément : le plus récent gagne ; à égalité, le cloud (r=1) prime sur le local (r=0), un élément prime sur une suppression. */
 function merge(L,R){const li=itemsOf(L),ri=itemsOf(R),ls=L.meta.stamps,rs=R.meta.stamps,ld=L.meta.del,rd=R.meta.del;
  const keys=[...new Set([...Object.keys(li),...Object.keys(ri),...Object.keys(ld),...Object.keys(rd)])];
- const out={subjects:[],tasks:[],settings:null,plans:{},timetable:[],meta:{stamps:{},del:{},hash:{}}};
+ const out={subjects:[],tasks:[],settings:null,plans:{},timetable:[],habits:[],history:[],meta:{stamps:{},del:{},hash:{}}};
  keys.forEach(k=>{const c=[];if(k in li)c.push({v:li[k],ts:ls[k]||0,r:0});if(k in ri)c.push({v:ri[k],ts:rs[k]||0,r:1});if(k in ld)c.push({del:1,ts:ld[k],r:-1});if(k in rd)c.push({del:1,ts:rd[k],r:-1});
   c.sort((a,b)=>b.ts-a.ts||b.r-a.r);const w=c[0];if(!w)return;if(w.del){out.meta.del[k]=w.ts;return}
   out.meta.stamps[k]=w.ts;const p=k.split(':')[0];
-  if(k==='cfg')out.settings=w.v;else if(p==='t')out.tasks.push(w.v);else if(p==='s')out.subjects.push(w.v);else if(p==='p')out.plans[k.slice(2)]=w.v;else if(p==='c')out.timetable.push(w.v)});
+  if(k==='cfg')out.settings=w.v;else if(p==='t')out.tasks.push(w.v);else if(p==='s')out.subjects.push(w.v);else if(p==='p')out.plans[k.slice(2)]=w.v;else if(p==='c')out.timetable.push(w.v);else if(p==='h')out.habits.push(w.v);else if(p==='y')out.history.push(w.v)});
  out.settings=out.settings||L.settings;const o=itemsOf(out);for(const k in o)out.meta.hash[k]=JSON.stringify(o[k]);return out}
 const sig=S=>{const i=itemsOf(S);return Object.keys(i).sort().map(k=>k+'@'+(S.meta.stamps[k]||0)+JSON.stringify(i[k])).join('|')+'#'+JSON.stringify(Object.keys(S.meta.del).sort().map(k=>[k,S.meta.del[k]]))};
 const snap=S=>{const c=JSON.parse(JSON.stringify(S));c.meta={ver:1,stamps:c.meta.stamps,del:c.meta.del};return c};
@@ -408,7 +410,7 @@ async function syncNow(){
 }
 window.loadCloudState=async function(user){
  const owner=localStorage.getItem('tempo-planning-owner');
- if(owner&&owner!==user.id){backupLocal('changement-compte');state={subjects:DEFAULT_SUBJECTS.map(s=>({...s})),tasks:[],settings:{...DEF_SET},plans:{},timetable:[]};localStorage.setItem(TT_KEY,'[]');localStorage.setItem(KEY,JSON.stringify(state));localStorage.setItem('tempo-planning-owner',user.id);render()}
+ if(owner&&owner!==user.id){backupLocal('changement-compte');state={subjects:DEFAULT_SUBJECTS.map(s=>({...s})),tasks:[],settings:{...DEF_SET},plans:{},timetable:[],habits:[],history:[]};localStorage.setItem(TT_KEY,'[]');localStorage.setItem(KEY,JSON.stringify(state));localStorage.setItem('tempo-planning-owner',user.id);render()}
  currentUser=user;return syncNow()};
 window.syncToCloud=syncNow;
 window.scheduleCloudSave=function(){if(!currentUser)return;clearTimeout(syncTimer);if(!navigator.onLine){setSync('offline');return}syncTimer=setTimeout(syncNow,800)};
@@ -440,6 +442,122 @@ const fh=t=>{const [h,m]=String(t).split(':');return h+' h'+(m&&m!=='00'?' '+m:'
 function rules(){const n=document.querySelector('#today .layout .notice');if(!n)return;const s=state.settings;n.innerHTML='🌙 Fin des activités planifiées : <strong>'+escapeHtml(fh(s.endTime))+'</strong><br>🍽️ Dîner réservé : <strong>1 heure</strong> (à partir de '+escapeHtml(fh(s.dinnerStart))+')<br>🏃 Sport : <strong>'+escapeHtml(minsLabel(Number(s.sportGoal)||0))+' par semaine minimum</strong>'}
 const _render=window.render;window.render=function(){_render();rules()};
 window.render();setSync(currentUser?'syncing':(navigator.onLine?'local':'offline'));
+})();
+</script>
+<script>
+/* ===== Life_OS — améliorations : assistant de planification, habitudes, recherche globale, bilan hebdomadaire =====
+   Ajouts uniquement. Logique locale déterministe : aucune IA, aucune clé API. */
+(function(){
+const DN=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'],$=id=>document.getElementById(id),esc=escapeHtml;
+const norm=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+const tmin=t=>{const [h,m]=String(t||'0:0').split(':').map(Number);return h*60+m},hm=n=>String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0');
+const selDate=()=>$('selectedDate').value||today(),freeMin=()=>state.settings.freeMin==null?60:Number(state.settings.freeMin)||0;
+const dowOf=d=>new Date(d+'T12:00:00').getDay(),mondayOf=d=>plusDays(d,-((dowOf(d)+6)%7));
+state.habits=state.habits||[];state.history=state.history||[];
+const st=document.createElement('style');st.textContent='.sug{display:grid;grid-template-columns:auto 1fr;gap:10px;padding:11px;border:1px solid var(--line);border-radius:13px;margin-bottom:8px;cursor:pointer}.sug b{display:block}.kind{font-size:11px;font-weight:750;color:var(--accent)}.bar{height:8px;border-radius:9px;margin-top:4px}.rc{padding:10px 0;border-bottom:1px solid var(--line)}.rc:last-child{border-bottom:0}.sr-item{width:100%;text-align:left;margin-bottom:6px}.sr-g{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:10px 0 6px}';document.head.appendChild(st);
+
+/* Historique durable des tâches terminées (la purge à 7 jours est conservée) */
+function recHist(){state.history=(state.history||[]).filter(h=>{const t=taskFor(h.id);return !t||t.done});const ids=new Set(state.history.map(h=>h.id));
+ state.tasks.forEach(t=>{if(t.done&&t.completedAt&&!ids.has(t.id)){const h={id:t.id,title:t.title,subjectId:t.subjectId,duration:t.duration,date:iso(t.completedAt)};if(t.habitId)h.habitId=t.habitId;state.history.push(h)}});state.history=state.history.slice(-2000)}
+const _save=window.save;window.save=function(){recHist();_save()};
+
+/* Onglets et sections ajoutés (aucune vue existante n'est remplacée) */
+const nav=document.querySelector('nav.tabs'),foot=document.querySelector('main .footer');
+[['assistant','🧭 Assistant'],['habits','🔁 Habitudes'],['recap','📈 Bilan']].forEach(([id,l])=>{const b=document.createElement('button');b.className='tab';b.dataset.tab=id;b.textContent=l;b.onclick=()=>showTab(id);nav.appendChild(b);const s=document.createElement('section');s.id=id;s.className='section';foot.before(s)});
+const _st=window.showTab;window.showTab=function(id){_st(id);if(id==='assistant')renderAssistant();if(id==='habits')renderHabits();if(id==='recap')renderRecap()};
+$('assistant').innerHTML='<div class="panel"><div class="panel-head"><h2>🧭 Assistant de planification</h2></div><div class="notice">Logique locale déterministe (aucune IA, aucune clé API). Elle lit tes réglages, cours, tâches et habitudes. <strong>Rien n’est modifié sans ta validation.</strong></div><p class="muted small" id="asDate"></p><button type="button" id="asRun" style="width:100%">Analyser et proposer</button><div id="asOut" style="margin-top:14px" aria-live="polite"></div></div>';
+$('asRun').onclick=runAssistant;
+
+/* ---- Habitudes + temps libre ---- */
+function renderHabits(){const opts=state.subjects.map(s=>'<option value="'+esc(s.id)+'">'+esc(s.name)+'</option>').join('');
+ $('habits').innerHTML='<div class="panel"><div class="panel-head"><h2>🔁 Mes habitudes</h2></div><p class="muted small">Une habitude revient certains jours. L’assistant te propose de la placer dans le planning (jamais automatiquement). Le temps libre minimum se règle dans ⚙ Réglages.</p><div class="list" style="margin-bottom:16px">'+(state.habits.length?state.habits.map(h=>'<div class="task" style="grid-template-columns:minmax(0,1fr) auto"><div><div class="task-title">'+esc(h.name)+'</div><div class="task-meta">'+esc(subject(h.subjectId).name)+' · '+minsLabel(h.duration)+' · '+h.days.map(d=>DN[d].slice(0,3)).join(', ')+'</div></div><div class="task-actions"><button class="secondary" onclick="delHabit(\''+h.id+'\')">✕</button></div></div>').join(''):'<div class="empty">Aucune habitude pour le moment.</div>')+'</div><div class="field-wrap"><label class="field" for="hName">Nouvelle habitude</label><input id="hName" placeholder="Ex. Lecture, Révision d’anglais…"></div><div class="form-grid"><div class="field-wrap"><label class="field" for="hDur">Durée (min)</label><input id="hDur" type="number" min="10" step="5" value="30"></div><div class="field-wrap"><label class="field" for="hSubj">Matière / catégorie</label><select id="hSubj">'+opts+'</select></div></div><div class="field-wrap"><label class="field">Jours</label><div style="display:flex;gap:10px;flex-wrap:wrap">'+[1,2,3,4,5,6,0].map(d=>'<label class="small"><input type="checkbox" class="hday" value="'+d+'" style="width:auto"> '+DN[d].slice(0,3)+'</label>').join('')+'</div></div><button type="button" style="width:100%" onclick="addHabit()">＋ Ajouter l’habitude</button></div>'}
+window.addHabit=function(){const name=$('hName').value.trim(),days=[...document.querySelectorAll('.hday:checked')].map(x=>Number(x.value)),dur=Math.max(10,Number($('hDur').value)||30);
+ if(!name||!days.length){alert('Donne un nom et choisis au moins un jour.');return}
+ if(state.habits.some(h=>norm(h.name)===norm(name))){alert('Une habitude portant ce nom existe déjà.');return}
+ state.habits.push({id:uid(),name:name.slice(0,80),duration:dur,days:days.sort(),subjectId:$('hSubj').value});save();renderHabits()};
+window.delHabit=function(id){if(!confirm('Supprimer cette habitude ? Les tâches déjà créées sont conservées.'))return;state.habits=state.habits.filter(h=>h.id!==id);save();renderHabits()};
+const _set=window.settings;window.settings=function(){_set();const g=document.querySelector('#modalBody .form-grid');if(g){const d=document.createElement('div');d.className='field-wrap';d.innerHTML='<label class="field">Temps libre minimum par jour (min)</label><input id="sFree" type="number" min="0" step="15" value="'+freeMin()+'">';g.appendChild(d)}};$('settingsBtn').onclick=window.settings;
+const _sm=window.saveModal;window.saveModal=function(){const f=$('sFree');if(settingsEdit&&f)state.settings.freeMin=Math.min(600,Math.max(0,Number(f.value)||0));_sm()};$('saveModal').onclick=window.saveModal;
+
+/* ---- Moteur de l'assistant ---- */
+function dayCtx(date){const s=state.settings,ds=tmin(s.dinnerStart||'19:00'),dow=dowOf(date);
+ return {ws:tmin(s.dayStart||'18:30'),we:tmin(s.endTime||'23:00'),dinner:{s:ds,e:ds+60,label:'Dîner'},dow,
+  courses:getTimetable().filter(x=>Number(x.day)===dow).map(x=>({s:tmin(x.start),e:tmin(x.end),label:x.title})),
+  plan:planFor(date).map(x=>{const t=taskFor(x.taskId);return t?{id:x.taskId,s:tmin(x.start),e:tmin(x.start)+(Number(x.duration)||t.duration||45),label:t.title,done:t.done,t}:null}).filter(Boolean)}}
+function freeOf(c,withDone){const occ=new Uint8Array(1440);[...c.courses,c.dinner,...c.plan.filter(p=>withDone||!p.done)].forEach(b=>{for(let m=Math.max(0,b.s);m<Math.min(1440,b.e);m++)occ[m]=1});let f=0;for(let m=c.ws;m<c.we;m++)if(!occ[m])f++;return f}
+function conflictsOf(c){const m=new Map(),add=(p,w)=>{const e=m.get(p.id)||{a:p,w:[]};e.w.push(w);m.set(p.id,e)},act=c.plan.filter(p=>!p.done);
+ act.forEach((p,i)=>{act.slice(i+1).forEach(q=>{if(p.s<q.e&&q.s<p.e)add(p,'chevauche « '+q.label+' »')});c.courses.forEach(k=>{if(p.s<k.e&&k.s<p.e)add(p,'chevauche le cours « '+k.label+' » ('+hm(k.s)+'–'+hm(k.e)+')')});if(p.s<c.dinner.e&&c.dinner.s<p.e)add(p,'chevauche le dîner');if(p.e>c.we)add(p,'dépasse la fin des activités ('+hm(c.we)+')')});return [...m.values()]}
+function finder(c,date){const busy=[...c.courses,c.dinner,...c.plan.filter(p=>!p.done)].map(x=>({s:x.s,e:x.e}));let from=c.ws;if(date===today()){const n=new Date();from=Math.max(from,Math.ceil((n.getHours()*60+n.getMinutes())/15)*15)}
+ return {find(dur){for(let s=from;s+dur<=c.we;s+=5)if(!busy.some(b=>s<b.e&&s+dur>b.s))return s;return null},take(s,dur){busy.push({s,e:s+dur+10})}}}
+function fits(date,s,dur,ignore){const c=dayCtx(date),e=s+dur;return !(c.courses.some(k=>s<k.e&&e>k.s)||(s<c.dinner.e&&e>c.dinner.s)||e>c.we||c.plan.some(p=>!p.done&&p.id!==ignore&&s<p.e&&e>p.s))}
+function planTask(date,id,s,dur){if(!fits(date,s,dur))return false;state.plans[date]=[...planFor(date),{taskId:id,start:hm(s),duration:dur}].sort((a,b)=>a.start.localeCompare(b.start));return true}
+function newTask(date,d,s){if(!fits(date,s,d.duration))return false;const id=uid();state.tasks.push({id,title:d.title,subjectId:d.subjectId,duration:d.duration,priority:1,due:date,notes:d.notes,done:false,...(d.habitId?{habitId:d.habitId}:{})});return planTask(date,id,s,d.duration)}
+function analyse(date){const c=dayCtx(date),sf=finder(c,date),sug=[],info=[],cf=conflictsOf(c),free0=freeOf(c);let budget=free0-freeMin(),added=0;
+ cf.forEach(e=>{const dur=e.a.e-e.a.s,s=sf.find(dur);if(s==null){info.push('« '+e.a.label+' » est en conflit mais aucun créneau libre n’a été trouvé.');return}sf.take(s,dur);sug.push({kind:'Déplacer',text:'Déplacer « '+e.a.label+' » de '+hm(e.a.s)+' à '+hm(s),why:'Conflit : '+e.w.join(' ; ')+'.',apply:()=>{const it=planFor(date).find(x=>x.taskId===e.a.id);if(!it||!fits(date,s,dur,e.a.id))return false;it.start=hm(s);return true}})});
+ state.habits.filter(h=>h.days.includes(c.dow)&&!state.tasks.some(t=>t.habitId===h.id&&t.due===date)).forEach(h=>{const s=sf.find(h.duration);if(s==null){info.push('Pas de créneau libre pour l’habitude « '+h.name+' ».');return}sf.take(s,h.duration);budget-=h.duration+10;added+=h.duration;sug.push({kind:'Habitude',text:'Ajouter « '+h.name+' » '+hm(s)+'–'+hm(s+h.duration),why:'Habitude prévue le '+DN[c.dow].toLowerCase()+'.',apply:()=>newTask(date,{title:h.name,subjectId:h.subjectId,duration:h.duration,notes:'Habitude',habitId:h.id},s)})});
+ const sp=state.subjects.find(x=>x.id==='sport')||state.subjects.find(x=>/sport/i.test(x.name)),mon=mondayOf(date);
+ if(sp&&!c.plan.some(p=>p.t.subjectId===sp.id)&&!sug.some(x=>x.kind==='Habitude'&&x.text.length&&state.habits.some(h=>h.subjectId===sp.id&&x.text.includes('« '+h.name+' »')))){let wk=0;for(let i=0;i<7;i++)planFor(plusDays(mon,i)).forEach(x=>{const t=taskFor(x.taskId);if(t&&t.subjectId===sp.id)wk+=Number(x.duration)||t.duration});const rem=(Number(state.settings.sportGoal)||0)-wk;
+  if(rem>0){const dur=Math.min(90,Math.max(30,Math.ceil(rem/15)*15)),s=sf.find(dur);if(s!=null&&budget>=dur+10){sf.take(s,dur);budget-=dur+10;added+=dur;sug.push({kind:'Sport',text:'Séance de sport '+hm(s)+'–'+hm(s+dur),why:'Il manque '+minsLabel(rem)+' pour ton objectif hebdomadaire ('+minsLabel(wk)+' déjà planifiées).',apply:()=>newTask(date,{title:'Sport',subjectId:sp.id,duration:dur,notes:'Proposé par l’assistant.'},s)})}}}
+ const placed=new Set();for(const d in state.plans)state.plans[d].forEach(x=>placed.add(x.taskId));
+ state.tasks.filter(t=>!t.done&&!placed.has(t.id)).sort((a,b)=>b.priority-a.priority||(a.due||'9999').localeCompare(b.due||'9999')).forEach(t=>{const dur=Math.max(10,Number(t.duration)||45);
+  if(budget<dur+10){info.push('« '+t.title+' » non proposée : cela réduirait ton temps libre sous '+minsLabel(freeMin())+'.');return}const s=sf.find(dur);if(s==null){info.push('« '+t.title+' » : aucun créneau libre ce jour-là.');return}sf.take(s,dur);budget-=dur+10;added+=dur;
+  const dd=t.due?Math.round((new Date(t.due+'T12:00:00')-new Date(date+'T12:00:00'))/864e5):null;sug.push({kind:'Tâche',text:'Planifier « '+t.title+' » '+hm(s)+'–'+hm(s+dur),why:(t.priority===3?'Urgente':t.priority===2?'Importante':'Priorité normale')+(dd==null?'':dd<0?' · échéance dépassée':dd===0?' · à rendre ce jour':' · échéance dans '+dd+' j')+'.',apply:()=>planTask(date,t.id,s,dur)})});
+ return {c,cf,sug,info,free0,projected:free0-added}}
+let last=null;
+function renderAssistant(){$('asDate').textContent='Journée analysée : '+dateLabel(selDate())+' (change la date dans « Aujourd’hui »).'}
+function runAssistant(){const date=selDate(),r=analyse(date);last={date,sug:r.sug};let h='<h3 style="margin:0 0 6px;font-size:15px">Faits</h3><p class="muted small">Fenêtre de travail '+hm(r.c.ws)+'–'+hm(r.c.we)+' · '+r.c.courses.length+' cours · '+r.c.plan.length+' activité(s) planifiée(s) · temps libre actuel '+minsLabel(r.free0)+' (minimum voulu : '+minsLabel(freeMin())+').</p>';
+ h+=r.cf.length?'<h3 style="margin:10px 0 6px;font-size:15px">⚠️ Conflits détectés</h3><ul class="small">'+r.cf.map(e=>'<li><strong>'+esc(e.a.label)+'</strong> ('+hm(e.a.s)+'–'+hm(e.a.e)+') '+esc(e.w.join(' ; '))+'</li>').join('')+'</ul>':'<p class="small">✅ Aucun conflit ni chevauchement dans le planning de cette journée.</p>';
+ h+='<h3 style="margin:10px 0 6px;font-size:15px">Suggestions (aucune n’est appliquée tant que tu ne valides pas)</h3>';
+ if(r.sug.length){h+=r.sug.map((x,i)=>'<label class="sug"><input type="checkbox" data-i="'+i+'" style="width:auto;margin-top:4px"><div><span class="kind">'+esc(x.kind)+'</span><b>'+esc(x.text)+'</b><span class="small muted">'+esc(x.why)+'</span></div></label>').join('')+'<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="secondary" onclick="asAll()">Tout cocher</button><button type="button" onclick="asApply()">Appliquer la sélection</button><button type="button" class="secondary" onclick="asClear()">Tout ignorer</button></div><p class="small muted">Temps libre projeté si tout est accepté : '+minsLabel(Math.max(0,r.projected))+'.</p>'}else h+='<p class="muted small">Aucune suggestion pour cette journée.</p>';
+ if(r.info.length)h+='<h3 style="margin:10px 0 6px;font-size:15px">Remarques</h3><ul class="small muted">'+r.info.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>';$('asOut').innerHTML=h}
+window.asAll=()=>document.querySelectorAll('#asOut input[data-i]').forEach(x=>x.checked=true);
+window.asClear=()=>{last=null;$('asOut').innerHTML='<p class="muted small">Suggestions ignorées : le planning n’a pas été modifié.</p>'};
+window.asApply=function(){if(!last)return;const idx=[...document.querySelectorAll('#asOut input[data-i]:checked')].map(x=>+x.dataset.i);if(!idx.length){alert('Coche au moins une suggestion à appliquer.');return}
+ if(!confirm('Appliquer '+idx.length+' modification(s) au planning du '+dateLabel(last.date)+' ?'))return;let ok=0,skip=0;idx.forEach(i=>last.sug[i].apply()?ok++:skip++);save();alert(ok+' modification(s) appliquée(s)'+(skip?', '+skip+' ignorée(s) car le créneau n’était plus libre.':'.'));runAssistant()};
+
+/* ---- Recherche globale + ajout rapide ---- */
+const sm=document.createElement('div');sm.className='modal';sm.id='searchModal';sm.setAttribute('role','dialog');sm.setAttribute('aria-modal','true');
+sm.innerHTML='<div class="dialog"><div class="dialog-head"><h2>🔍 Recherche</h2><button class="ghost" type="button" id="srClose" aria-label="Fermer">✕</button></div><input id="srInput" type="search" placeholder="Tâche, matière, habitude, cours…" aria-label="Recherche globale" autocomplete="off"><div id="srOut" style="margin-top:12px" aria-live="polite"></div></div>';document.body.appendChild(sm);
+const sb=document.createElement('button');sb.id='searchBtn';sb.type='button';sb.className='secondary';sb.setAttribute('aria-label','Recherche (Ctrl+K)');sb.textContent='🔍';$('themeBtn').parentNode.insertBefore(sb,$('themeBtn'));
+let R=[];const closeS=()=>sm.classList.remove('open'),openS=()=>{sm.classList.add('open');$('srInput').value='';doSearch();setTimeout(()=>$('srInput').focus(),0)};
+sb.onclick=openS;$('srClose').onclick=closeS;sm.addEventListener('click',e=>{if(e.target===sm)closeS()});
+document.addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();openS()}else if(e.key==='Escape'&&sm.classList.contains('open'))closeS()});
+function doSearch(){const raw=$('srInput').value.trim(),q=norm(raw),out=$('srOut');R=[];if(!q){out.innerHTML='<p class="muted small">Tape pour chercher (Ctrl/⌘+K pour ouvrir). Tu peux aussi créer une tâche ou une habitude depuis ta saisie.</p>';return}
+ state.tasks.forEach(t=>{if(norm(t.title+' '+t.notes+' '+subject(t.subjectId).name).includes(q))R.push({g:'Tâches',l:t.title,s:subject(t.subjectId).name+(t.done?' · terminée':'')+(t.due?' · échéance '+t.due:''),go:()=>editTask(t.id)})});
+ state.subjects.forEach(s=>{if(norm(s.name).includes(q))R.push({g:'Matières',l:s.name,s:'Modifier la matière',go:()=>{showTab('subjects');editSubject(s.id)}})});
+ state.habits.forEach(h=>{if(norm(h.name).includes(q))R.push({g:'Habitudes',l:h.name,s:h.days.map(d=>DN[d].slice(0,3)).join(', '),go:()=>showTab('habits')})});
+ getTimetable().forEach(x=>{if(norm(x.title).includes(q))R.push({g:'Cours',l:x.title,s:DN[x.day]+' '+x.start+'–'+x.end,go:openTimetable})});
+ for(const d in state.plans)state.plans[d].forEach(x=>{const t=taskFor(x.taskId);if(t&&norm(t.title).includes(q))R.push({g:'Planning',l:t.title,s:dateLabel(d)+' · '+x.start,go:()=>{$('selectedDate').value=d;render();showTab('today')}})});
+ R=R.slice(0,40);let h='',g='';R.forEach((r,i)=>{if(r.g!==g){g=r.g;h+='<div class="sr-g">'+esc(g)+'</div>'}h+='<button type="button" class="secondary sr-item" data-r="'+i+'"><strong>'+esc(r.l)+'</strong><br><span class="small muted">'+esc(r.s)+'</span></button>'});if(!R.length)h='<p class="muted small">Aucun résultat.</p>';
+ const dupT=state.tasks.some(t=>!t.done&&norm(t.title)===q),dupH=state.habits.some(x=>norm(x.name)===q);
+ h+='<div class="sr-g">Ajout rapide</div><button type="button" class="sr-item" id="srAddT">＋ Créer la tâche « '+esc(raw)+' »'+(dupT?' (une tâche identique existe déjà)':'')+'</button><button type="button" class="secondary sr-item" id="srAddH">＋ Créer l’habitude « '+esc(raw)+' »'+(dupH?' (existe déjà)':'')+'</button>';out.innerHTML=h;
+ $('srAddT').onclick=()=>{if(dupT&&!confirm('Une tâche à faire porte déjà ce titre. Créer quand même ?'))return;closeS();editTask();$('mTitle').value=raw;$('mTitle').focus()};
+ $('srAddH').onclick=()=>{if(dupH){alert('Une habitude porte déjà ce nom.');return}closeS();showTab('habits');$('hName').value=raw;$('hName').focus()}}
+$('srInput').addEventListener('input',doSearch);$('srOut').addEventListener('click',e=>{const b=e.target.closest('[data-r]');if(b){const r=R[+b.dataset.r];closeS();if(r)r.go()}});
+
+/* ---- Bilan hebdomadaire ---- */
+let recOff=0;window.recNav=n=>{recOff=n?recOff+n:0;renderRecap()};
+function renderRecap(){const mon=plusDays(mondayOf(selDate()),7*recOff),days=Array.from({length:7},(_,i)=>plusDays(mon,i)),t0=today(),inW=d=>d>=days[0]&&d<=days[6];
+ let planned=0,pMin=0,bySub={},missed=[],heavy=[],freeSum=0,freeN=0,sportP=0;const sp=state.subjects.find(x=>x.id==='sport')||state.subjects.find(x=>/sport/i.test(x.name));
+ days.forEach(d=>{let dm=0;planFor(d).forEach(x=>{const t=taskFor(x.taskId);if(!t)return;const dur=Number(x.duration)||t.duration||0;planned++;pMin+=dur;dm+=dur;bySub[t.subjectId]=(bySub[t.subjectId]||0)+dur;if(sp&&t.subjectId===sp.id)sportP+=dur;if(!t.done&&d<t0)missed.push({t,d})});if(dm>300)heavy.push(d);if(d<=t0){freeSum+=freeOf(dayCtx(d),true);freeN++}});
+ const done=new Map();state.history.forEach(h=>{if(inW(h.date))done.set(h.id,h)});state.tasks.forEach(t=>{if(t.done&&t.completedAt&&inW(iso(t.completedAt))&&!done.has(t.id))done.set(t.id,{id:t.id,subjectId:t.subjectId,duration:t.duration,habitId:t.habitId})});
+ let dMin=0,sportD=0;done.forEach(h=>{dMin+=Number(h.duration)||0;if(sp&&h.subjectId===sp.id)sportD+=Number(h.duration)||0});
+ const over=state.tasks.filter(t=>!t.done&&t.due&&t.due<t0).sort((a,b)=>a.due.localeCompare(b.due));
+ const hab=state.habits.map(h=>({h,exp:days.filter(d=>d<=t0&&h.days.includes(dowOf(d))).length,got:[...done.values()].filter(x=>x.habitId===h.id).length}));
+ const avgFree=freeN?Math.round(freeSum/freeN):null,goal=Number(state.settings.sportGoal)||0,maxS=Math.max(1,...Object.values(bySub));
+ const tips=[];if(missed.length)tips.push('Replanifie '+missed.length+' activité(s) prévue(s) mais non terminée(s) : l’assistant peut t’aider.');if(over.length)tips.push(over.length+' tâche(s) ont dépassé leur échéance : à traiter en premier.');
+ if(goal&&sportP<goal)tips.push('Sport planifié : '+minsLabel(sportP)+' pour un objectif de '+minsLabel(goal)+'. Place une séance via l’assistant.');
+ hab.forEach(x=>{if(x.exp>x.got)tips.push('Habitude « '+x.h.name+' » : '+x.got+' fois sur '+x.exp+' prévues.')});
+ if(avgFree!=null&&avgFree<freeMin())tips.push('Temps libre moyen ('+minsLabel(avgFree)+') sous ton minimum ('+minsLabel(freeMin())+') : allège un jour chargé.');
+ heavy.forEach(d=>tips.push(dateLabel(d)+' dépasse 5 h de travail planifié : répartis une partie sur un autre jour.'));
+ const L=d=>new Date(d+'T12:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
+ $('recap').innerHTML='<div class="panel"><div class="panel-head"><h2>📈 Bilan de la semaine</h2><div class="day-controls"><button class="secondary" onclick="recNav(-1)" aria-label="Semaine précédente">‹</button><button class="secondary" onclick="recNav(0)">Cette semaine</button><button class="secondary" onclick="recNav(1)" aria-label="Semaine suivante">›</button></div></div><p class="muted small">Du '+L(days[0])+' au '+L(days[6])+'. L’historique des tâches terminées est conservé à partir de cette version : les semaines plus anciennes peuvent être incomplètes.</p>'
+ +'<h3 style="font-size:15px;margin:8px 0">Faits calculés</h3><div class="rc">Activités planifiées : <strong>'+planned+'</strong> ('+minsLabel(pMin)+')</div><div class="rc">Tâches terminées cette semaine : <strong>'+done.size+'</strong> ('+minsLabel(dMin)+')</div><div class="rc">Sport : <strong>'+minsLabel(sportP)+'</strong> planifié, <strong>'+minsLabel(sportD)+'</strong> réalisé · objectif '+minsLabel(goal)+'</div><div class="rc">Temps libre moyen par jour écoulé : <strong>'+(avgFree==null?'pas encore de jour écoulé':minsLabel(avgFree))+'</strong></div>'
+ +'<h3 style="font-size:15px;margin:14px 0 4px">Répartition du temps planifié</h3>'+(Object.keys(bySub).length?Object.entries(bySub).sort((a,b)=>b[1]-a[1]).map(([id,m])=>'<div class="rc"><span class="small">'+esc(subject(id).name)+' · '+minsLabel(m)+'</span><div class="bar" style="width:'+Math.round(m/maxS*100)+'%;background:'+esc(subject(id).color)+'"></div></div>').join(''):'<p class="muted small">Aucune activité planifiée cette semaine.</p>')
+ +'<h3 style="font-size:15px;margin:14px 0 4px">Habitudes</h3>'+(hab.length?hab.map(x=>'<div class="rc">'+esc(x.h.name)+' : <strong>'+(x.exp?x.got+' / '+x.exp:'pas encore prévue')+'</strong></div>').join(''):'<p class="muted small">Aucune habitude définie.</p>')
+ +'<h3 style="font-size:15px;margin:14px 0 4px">Reportées ou non atteintes</h3>'+(missed.length||over.length?'<ul class="small">'+missed.slice(0,8).map(x=>'<li>'+esc(x.t.title)+' — prévue le '+L(x.d)+', non terminée</li>').join('')+over.slice(0,5).map(t=>'<li>'+esc(t.title)+' — échéance dépassée ('+L(t.due)+')</li>').join('')+'</ul>':'<p class="muted small">Rien à signaler.</p>')
+ +'<h3 style="font-size:15px;margin:14px 0 4px">💡 Pistes pour la semaine suivante <span class="muted small">(suggestions, pas des faits)</span></h3>'+(tips.length?'<ul class="small">'+tips.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>':'<p class="muted small">Rien de particulier : continue comme ça.</p>')+'</div>'}
+recHist();
 })();
 </script>
 <footer style="text-align:center;padding:18px;font-size:12px;opacity:0.7">
